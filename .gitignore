@@ -1,0 +1,5 @@
+src/example/*.constant.js
+.tmp
+node_modules
+bower_components
+coverage
