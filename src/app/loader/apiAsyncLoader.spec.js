@@ -1,14 +1,13 @@
 (function() {
     // 'use strict';
     describe('apiAsyncLoaderOTProvider', function() {
-        var $window, subject, url, rs;
+        var $window, subject, url;
         subject = null;
         beforeEach(function() {
             module('ngOpenTok.loader');
-            inject(function(_$window_, _apiAsyncLoaderOT_, _$rootScope_) {
+            inject(function(_$window_, _apiAsyncLoaderOT_) {
                 subject = _apiAsyncLoaderOT_;
                 $window = _$window_;
-                rs = _$rootScope_;
             });
             url = '//static.opentok.com/v2/js/opentok.min.js';
             return $window.OT = void 0;

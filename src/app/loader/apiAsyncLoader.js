@@ -18,9 +18,8 @@
 
         /** @ngInject */
         function main($window, $document, rfc4122, $q, OPENTOK_URL) {
-            var scriptId, usedConfiguration;
-            usedConfiguration = null
-            scriptId = null;
+            var scriptId = null,
+            usedConfiguration = null;
 
             return {
                 load: load
