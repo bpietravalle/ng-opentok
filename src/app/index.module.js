@@ -1,6 +1,6 @@
 (function() {
     'use strict'
 
-    angular.module('ngOpenTok', ['uuid']);
+    angular.module('ngOpenTok', ['ngOpenTok.loader']);
 
 })();

@@ -1,4 +1,7 @@
 src/example/*.constant.js
+*.swp
+*.swo
+*.swn
 .tmp
 node_modules
 bower_components

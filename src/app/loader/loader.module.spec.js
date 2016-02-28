@@ -1,11 +1,11 @@
 (function() {
     'use strict'
 
-    describe("ngOpenTok Module", function() {
+    describe("ngOpenTok.loader Module", function() {
         var module;
 
         beforeEach(function() {
-            module = angular.module('ngOpenTok');
+            module = angular.module('ngOpenTok.loader');
         });
 
         it("should be defined", function() {
@@ -17,10 +17,10 @@
                 return deps.indexOf(m) >= 0;
             };
             beforeEach(function() {
-                deps = module.value('ngOpenTok').requires;
+                deps = module.value('ngOpenTok.loader').requires;
             });
-            it("should depend on ngOpenTok.loader", function() {
-                expect(hasModule("ngOpenTok.loader")).toBeTruthy();
+            it("should depend on uuid", function() {
+                expect(hasModule("uuid")).toBeTruthy();
             });
         });
 
