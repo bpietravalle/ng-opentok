@@ -9,11 +9,11 @@
 			return {
 				restrict: 'AE',
 				scope: {
-					sessionId: '@',
+					sessionId: '@'
 					// connection: '=',
 					// capabilities: '='
 				},
-				template: "<div class='angular-ot-session'>{{sessionId}}</div>"
+				template: "<div class='angular-ot-session'></div>"
 			};
 
 

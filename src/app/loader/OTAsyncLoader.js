@@ -1,9 +1,9 @@
 (function() {
     'use strict';
     angular.module('ngOpenTok.loader')
-        .provider('apiAsyncLoaderOT', apiAsyncLoaderOTProvider);
+        .provider('OTAsyncLoader', OTAsyncLoaderProvider);
 
-    function apiAsyncLoaderOTProvider() {
+    function OTAsyncLoaderProvider() {
         var that = this;
         that.options = {
             transport: 'https'

@@ -18,15 +18,15 @@
 					scope = null;
 					elem = null;
 				});
-        it("should be defined", function() {
-            expect(elem.html()).toBeDefined();
-        });
-        describe("Properties", function() {
-            describe("SessionId", function() {
-                it("should work", function() {
-                    expect(elem.html()).toBeDefined();
-                });
-            });
-        });
+        // it("should be defined", function() {
+        //     expect(elem.html()).toBeDefined();
+        // });
+        // describe("Properties", function() {
+        //     describe("SessionId", function() {
+        //         it("should work", function() {
+        //             expect(elem.html()).toBeDefined();
+        //         });
+        //     });
+        // });
     });
 })();
