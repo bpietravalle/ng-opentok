@@ -15,6 +15,7 @@
             paramCheck: paramCheck,
             qWrap: qWrap,
             qAll: qAll,
+            eventHandler: eventHandler,
             standardError: standardError
         };
 
@@ -76,24 +77,38 @@
             return hash;
         }
 
-        function handler(fn, res, ctx) {
+        function handler(fn, ctx) {
             return utils.defer(function(def) {
-                fn.call(ctx, function(err) {
+                fn.call(ctx, function(err, res) {
                     if (err !== null) {
-                        return def.reject(err);
-                    }
-                    if (res && angular.isFunction(res)) {
-                        return def.resolve(res.call(ctx));
+                        def.reject(err);
                     }
                     return def.resolve(res);
                 });
-            }, ctx);
+            });
         }
 
         function defer(fn, ctx) {
             var def = $q.defer();
             fn.call(ctx, def);
             return def.promise;
+        }
+
+        /**
+         * @param{Function} fn callback
+         * @param{Object} [ctx] context
+         */
+
+        function eventHandler(fn, ctx) {
+            return utils.defer(function(def) {
+                fn.call(ctx, function(event) {
+                    if (event) {
+                        def.resolve(event);
+                    } else {
+                        def.reject("No event object returned");
+                    }
+                });
+            });
         }
 
 

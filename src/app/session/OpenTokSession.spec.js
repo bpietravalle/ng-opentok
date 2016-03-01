@@ -1,11 +1,12 @@
 (function() {
     'use strict';
     describe('OpenTokSession', function() {
-        var subject;
+        var subject, test;
         describe("With invalid configuration", function() {
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
-                    $provide.value('OpenTokPublisher', {});
+                    $provide.value('SessionEvents', {});
+                    $provide.value('Publisher', {});
                     $provide.value('OpenTokSubscriber', {});
                     $provide.value('OTApi', {});
                 });
@@ -26,15 +27,34 @@
         describe("With Valid configuration", function() {
             var to, rs, ApiSpy, media;
             beforeEach(function() {
-                ApiSpy = jasmine.createSpyObj('ApiSpy', ['initSession']);
+                ApiSpy = {
+                    initSession: jasmine.createSpy('initSession').and.callFake(function() {
+                        return {
+                            capabilities: "asdf",
+                            connection: {},
+                            sessionId: "mySessionId",
+                            on: function() {},
+                            connect: jasmine.createSpy('connect'),
+                            publish: jasmine.createSpy('publish'),
+                            signal: jasmine.createSpy('signal'),
+                            subscribe: jasmine.createSpy('subscribe'),
+                            forceUnpublish: jasmine.createSpy('forceUnpublish'),
+                            forceDisconnect: jasmine.createSpy('forceDisconnect')
+                        };
+                    })
+                };
+
                 module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
                     OpenTokSessionProvider.setApiKey(12345);
+                    $provide.factory('SessionEvents', function() {
+                        return {};
+                    });
                     $provide.factory('media', function() {
                         return {
                             getSessionId: jasmine.createSpy('getSessionId').and.returnValue("mySessionId")
                         };
                     });
-                    $provide.factory('OpenTokPublisher', function($q) {
+                    $provide.factory('Publisher', function($q) {
                         return {
                             load: jasmine.createSpy('load').and.callFake(function() {
                                 return $q.when({});
@@ -54,7 +74,7 @@
                     media = _media_;
                     rs = _$rootScope_;
                     to = _$timeout_;
-                    subject = _OpenTokSession_();
+                    subject = _OpenTokSession_;
                 });
             });
             afterEach(function() {
@@ -70,6 +90,12 @@
 
             });
             describe("Options", function() {
+                beforeEach(function() {
+                    subject = subject();
+                    to.flush();
+                    rs.$digest();
+                });
+
                 function defaultValues(y) {
                     it("should have a default for " + y[0] + " of: " + y[1], function() {
                         expect(subject.inspect(y[0])).toEqual(y[1]);
@@ -89,7 +115,11 @@
             });
             describe("inspect", function() {
                 var test;
-
+                beforeEach(function() {
+                    subject = subject();
+                    to.flush();
+                    rs.$digest();
+                });
                 describe("without arguments", function() {
                     it("should return the 'self' object", function() {
                         test = subject.inspect();
@@ -110,12 +140,12 @@
                     });
                 });
             });
-            describe("initSession", function() {
-                var test, ctx;
+            describe("initialize", function() {
+                var ctx;
 
                 describe("With no ctx arg supplied", function() {
                     it("should set val to null", function() {
-                        test = subject.initSession(["param"])
+                        test = subject(["param"])
                         expect(function() {
                             to.flush();
                             rs.$digest();
@@ -126,7 +156,7 @@
                 describe("With ValidParams", function() {
                     describe("When args is undefined", function() {
                         beforeEach(function() {
-                            test = subject.initSession(undefined, ctx);
+                            test = subject(undefined, ctx);
                             to.flush();
                         });
                         it("should not throw an error", function() {
@@ -141,7 +171,7 @@
                     });
                     describe("When args isn't an array", function() {
                         beforeEach(function() {
-                            test = subject.initSession("bad", ctx);
+                            test = subject("bad", ctx);
                             to.flush();
                         });
 
@@ -156,23 +186,44 @@
                     });
                     describe("When args arg an array", function() {
                         beforeEach(function() {
-                            test = subject.initSession(["correct", "params"], ctx);
+                            test = subject(["correct", "params"], ctx);
                             to.flush();
                         });
                         it("should pass args to sessionIdService and method", function() {
                             expect(media.getSessionId).toHaveBeenCalledWith("correct", 'params');
                         });
                     });
-                    it("should pass sessionId and apiKey to api.initSession", function() {
-                        ctx = jasmine.createSpy('ctx');
-                        test = subject.initSession(["params"], ctx);
-                        to.flush();
-                        rs.$digest();
-                        expect(ApiSpy.initSession).toHaveBeenCalledWith(12345, "mySessionId", jasmine.any(Function))
-                    });
-
                 });
-
+            });
+            describe("properties", function() {
+                beforeEach(function() {
+                    subject = subject();
+                    to.flush();
+                    rs.$digest();
+                });
+                it("should have connection prop", function() {
+                    expect(subject.connection).toEqual({});
+                });
+                it("should have a sessionId", function() {
+                    expect(subject.sessionId).toEqual("mySessionId");
+                });
+                it("should have capabilities prop", function() {
+                    expect(subject.capabilities).toEqual("asdf");
+                });
+            });
+            describe("connect", function() {
+                var spy;
+                beforeEach(function() {
+                    subject = subject();
+                    to.flush();
+                    rs.$digest();
+                    test = subject.connect('token');
+                    rs.$digest();
+                    spy = subject.inspect('session');
+                });
+                it("should pass param to OT api", function() {
+                    expect(spy.connect).toHaveBeenCalledWith('token', jasmine.any(Function));
+                });
             });
         });
     });

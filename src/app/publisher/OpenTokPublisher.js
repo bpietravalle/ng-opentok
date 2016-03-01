@@ -5,24 +5,27 @@
         .provider('OpenTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
-        var pv = this;
-        pv.setApiKey = setApiKey;
-        pv.$get = main;
-				
-				function setApiKey(num) {
-            pv._apiKey = num;
-        }
+            var pv = this;
+            pv.setApiKey = setApiKey;
+            pv.$get = main;
 
-        /** @ngInject */
-        function main($q, OTAsyncLoader, $timeout, $window, otutil) {
+            function setApiKey(num) {
+                pv._apiKey = num;
+            }
 
-            return function(options) {
-                var apiKey = pv._apiKey,
-                    key = new OpenTokPublisher($q, OTAsyncLoader, $timeout, $window, apiKey, otutil, options);
-                return key.construct();
+            /** @ngInject */
+            function main($q, OTAsyncLoader, $timeout, $window, otutil) {
+
+                return function(options) {
+                    var apiKey = pv._apiKey,
+                        key = new OpenTokPublisher($q, OTAsyncLoader, $timeout, $window, apiKey, otutil, options);
+                    return key.construct();
+                }
             }
         }
-    }
+        /**
+         * OT.initPublisher(element,properties,cb)
+         */
 
     function OpenTokPublisher(q, loader, timeout, win, apiKey, utils, options) {
         this._q = q;
