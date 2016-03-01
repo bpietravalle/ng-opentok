@@ -3,6 +3,8 @@
     angular.module('ngOpenTok.loader')
         .provider('OTAsyncLoader', OTAsyncLoaderProvider);
 
+    //Inspired by (ie taken from) angular-google-maps - thanks!
+
     function OTAsyncLoaderProvider() {
         var that = this;
         that.options = {
@@ -17,16 +19,16 @@
         that.$get = main;
 
         /** @ngInject */
-        function main($window, $document, rfc4122, $q, OPENTOK_URL) {
+        function main($window, rfc4122, $q, OPENTOK_URL) {
             var scriptId = null,
-            usedConfiguration = null;
+                usedConfiguration = null;
 
             return {
                 load: load
             }
 
             function isOTLoaded() {
-                return angular.isDefined($window.OT);
+                angular.isDefined($window.OT);
             }
 
             function setScript(options) {
@@ -38,9 +40,10 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
-                script.src = OPENTOK_URL;
-                if (options.transport) {
-                    script.src = options.transport + ':' + script.src;
+                if (options.transport === 'auto') {
+                    script.src = OPENTOK_URL;
+                } else {
+                    script.src = options.transport + ':' + OPENTOK_URL;
                 }
                 return $window.document.body.appendChild(script);
             }

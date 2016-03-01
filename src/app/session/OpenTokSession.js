@@ -60,9 +60,7 @@
          */
 
         function getSessionId(args, ctx) {
-            if (!ctx) {
-                ctx = null;
-            }
+            //TODO default ctx?
             if (!args) {
                 args = [];
             }
@@ -88,7 +86,6 @@
                         self[key] = self._session[key];
                     }
                 }));
-                return self._session;
             }
         }
 
@@ -99,7 +96,6 @@
         function getApi() {
             return self._api;
         }
-
 
     }
 
@@ -113,7 +109,6 @@
     OpenTokSession.prototype.once = once;
     OpenTokSession.prototype.inspect = inspect;
     OpenTokSession.prototype.registerEvents = registerEvents;
-
 
 
     /***************

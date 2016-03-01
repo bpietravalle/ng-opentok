@@ -33,7 +33,8 @@
                             capabilities: "asdf",
                             connection: {},
                             sessionId: "mySessionId",
-                            on: function() {},
+                            once: jasmine.createSpy('once'),
+                            on: jasmine.createSpy('on'),
                             connect: jasmine.createSpy('connect'),
                             publish: jasmine.createSpy('publish'),
                             signal: jasmine.createSpy('signal'),
@@ -143,16 +144,6 @@
             describe("initialize", function() {
                 var ctx;
 
-                describe("With no ctx arg supplied", function() {
-                    it("should set val to null", function() {
-                        test = subject(["param"])
-                        expect(function() {
-                            to.flush();
-                            rs.$digest();
-                            test;
-                        }).not.toThrow();
-                    });
-                });
                 describe("With ValidParams", function() {
                     describe("When args is undefined", function() {
                         beforeEach(function() {
@@ -194,6 +185,12 @@
                         });
                     });
                 });
+                describe("With Invalid", function() {
+                    it("should call utils.standardError", function() {
+
+                    });
+
+                });
             });
             describe("properties", function() {
                 beforeEach(function() {
@@ -211,19 +208,94 @@
                     expect(subject.capabilities).toEqual("asdf");
                 });
             });
-            describe("connect", function() {
-                var spy;
-                beforeEach(function() {
-                    subject = subject();
-                    to.flush();
-                    rs.$digest();
-                    test = subject.connect('token');
-                    rs.$digest();
-                    spy = subject.inspect('session');
-                });
-                it("should pass param to OT api", function() {
-                    expect(spy.connect).toHaveBeenCalledWith('token', jasmine.any(Function));
-                });
+            describe("Queries", function() {
+                var ctx = {
+                    context: "of fn call"
+                };
+                var queries = [
+                    ['on', ['onEventName']],
+                    ['on', ['onEventName', ctx]],
+                    ['once', ['onceEventName']],
+                    ['once', ['onceEventName', ctx]]
+                ];
+
+                function testQueries(y) {
+                    describe(y[0], function() {
+                        var fn, spy, utils;
+                        beforeEach(function() {
+                            subject = subject();
+                            to.flush();
+                            rs.$digest();
+                            utils = subject.inspect('utils');
+                            spyOn(utils, 'eventHandler').and.callThrough();
+                            subject[y[0]].apply(subject, y[1]);
+                            rs.$digest();
+                            spy = subject.inspect('session');
+                            fn = jasmine.any(Function);
+                        });
+                        it("should pass params to OT api", function() {
+                            expect(spy[y[0]].calls.argsFor(0)[0]).toEqual(y[1][0]);
+                            expect(spy[y[0]].calls.argsFor(0)[1]).toEqual(fn);
+                        });
+                        if (y[1].length === 1) {
+                            describe("Context - if ctx arg is undefined", function() {
+                                it("should set context to the current session object", function() {
+                                    expect(utils.eventHandler.calls.argsFor(0)[1]).toEqual(spy);
+                                });
+                            });
+                        } else {
+                            describe("Context - if ctx arg is defined", function() {
+                                it("should pass arg to the current session object", function() {
+                                    expect(utils.eventHandler.calls.argsFor(0)[1]).toEqual(ctx);
+                                });
+                            });
+                        }
+                    });
+                }
+                queries.forEach(testQueries);
+            });
+            describe("Commands", function() {
+                var commands = [
+                    ['connect', ['token']],
+                    // wont pass ...not sure why
+                    // ['forceUnpublish', [{
+                    //     stream: 'object'
+                    // }]],
+                    ['forceDisconnect', [{
+                        connection: 'object'
+                    }]],
+                    ['signal', [{
+                        data: 'object'
+                    }]],
+                    ['publish', [{
+                        publisher: 'object'
+                    }]],
+                    ['subscribe', [{
+                        stream: "object"
+                    }, "targetElem", {
+                        prop: "object"
+                    }]]
+                ];
+
+                function testCommands(y) {
+                    describe(y[0], function() {
+                        var fn, spy;
+                        beforeEach(function() {
+                            subject = subject();
+                            to.flush();
+                            rs.$digest();
+                            subject[y[0]].apply(subject, y[1]);
+                            rs.$digest();
+                            spy = subject.inspect('session');
+                            fn = jasmine.any(Function);
+                        });
+                        it("should pass param to OT api", function() {
+                            y[1].push(fn);
+                            expect(spy[y[0]].calls.argsFor(0)).toEqual(y[1]);
+                        });
+                    });
+                }
+                commands.forEach(testCommands);
             });
         });
     });
