@@ -1,14 +1,39 @@
 (function() {
     'use strict';
     describe('OpenTokSession', function() {
-        var subject, test;
+        var to, rs, subject, media, test, $q, ApiSpy, subscriberSpy;
+        beforeEach(function() {
+            subscriberSpy = jasmine.createSpy('subscriberSpy');
+            ApiSpy = {
+                initSession: jasmine.createSpy('initSession').and.callFake(function() {
+                    return {
+                        capabilities: "asdf",
+                        connection: {},
+                        sessionId: "mySessionId",
+                        once: jasmine.createSpy('once'),
+                        on: jasmine.createSpy('on'),
+                        connect: jasmine.createSpy('connect'),
+                        publish: jasmine.createSpy('publish'),
+                        signal: jasmine.createSpy('signal'),
+                        subscribe: jasmine.createSpy('subscribe').and.returnValue({
+                            element: "subscriberElement",
+                            id: "subscriberId"
+                        }),
+                        forceUnpublish: jasmine.createSpy('forceUnpublish'),
+                        forceDisconnect: jasmine.createSpy('forceDisconnect')
+                    };
+                })
+            };
+        });
         describe("With invalid configuration", function() {
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
                     $provide.value('SessionEvents', {});
                     $provide.value('Publisher', {});
-                    $provide.value('OpenTokSubscriber', {});
-                    $provide.value('OTApi', {});
+                    $provide.value('Subscriber', {});
+                    $provide.factory('OTApi', function($q) {
+                        return $q.when(ApiSpy);
+                    });
                 });
                 inject(function(_OpenTokSession_) {
                     subject = _OpenTokSession_;
@@ -24,26 +49,63 @@
 
             });
         });
-        describe("With Valid configuration", function() {
-            var to, rs, ApiSpy, media;
+        describe("Without token configuration", function() {
             beforeEach(function() {
-                ApiSpy = {
-                    initSession: jasmine.createSpy('initSession').and.callFake(function() {
+                module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
+                    $provide.value('SessionEvents', {});
+                    $provide.factory('media', function() {
                         return {
-                            capabilities: "asdf",
-                            connection: {},
-                            sessionId: "mySessionId",
-                            once: jasmine.createSpy('once'),
-                            on: jasmine.createSpy('on'),
-                            connect: jasmine.createSpy('connect'),
-                            publish: jasmine.createSpy('publish'),
-                            signal: jasmine.createSpy('signal'),
-                            subscribe: jasmine.createSpy('subscribe'),
-                            forceUnpublish: jasmine.createSpy('forceUnpublish'),
-                            forceDisconnect: jasmine.createSpy('forceDisconnect')
+                            getSessionId: jasmine.createSpy('getSessionId').and.returnValue("mySessionId")
                         };
-                    })
-                };
+                    });
+                    $provide.value('participants', {});
+                    $provide.value('publisher', {});
+                    $provide.value('subscriber', {});
+                    $provide.factory('OTApi', function($q) {
+                        return $q.when(ApiSpy);
+                    });
+                    OpenTokSessionProvider.configure({
+                        apiKey: 12345,
+                        token: false
+                    });
+                });
+                inject(function(_$timeout_, _OpenTokSession_, _$rootScope_) {
+                    subject = _OpenTokSession_();
+                    rs = _$rootScope_;
+                    to = _$timeout_
+                });
+                to.flush();
+                rs.$digest();
+            });
+            afterEach(function() {
+                subject = null;
+            });
+
+            var tokenMeths = ['tokenService', 'tokenMethod', 'tokenObject', 'getToken'];
+
+            function tokenTest(y) {
+                it(y + " should not be defined", function() {
+                    expect(subject.inspect(y)).not.toBeDefined();
+                });
+            }
+            tokenMeths.forEach(tokenTest);
+            describe('connect', function() {
+                var spy;
+                beforeEach(function() {
+                    spy = subject.inspect('session');
+                    test = subject.connect("token", "notPassedCTX");
+                    rs.$digest();
+                });
+                it("should pass token to session.connect", function() {
+                    expect(spy.connect).toHaveBeenCalledWith('token', jasmine.any(Function));
+                });
+                it("should not pass ctx argument", function() {
+                    expect(spy.connect).not.toHaveBeenCalledWith("notPassedCTX");
+                });
+            });
+        });
+        describe("With Valid configuration", function() {
+            beforeEach(function() {
 
                 module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
                     OpenTokSessionProvider.setApiKey(12345);
@@ -55,24 +117,33 @@
                             getSessionId: jasmine.createSpy('getSessionId').and.returnValue("mySessionId")
                         };
                     });
-                    $provide.factory('Publisher', function($q) {
+                    $provide.factory('participants', function() {
                         return {
-                            load: jasmine.createSpy('load').and.callFake(function() {
-                                return $q.when({});
+                            getToken: jasmine.createSpy('getToken').and.callFake(function() {
+                                return "participantToken";
                             })
                         };
                     });
-                    $provide.factory('OpenTokSubscriber', function($q) {
-                        return {
-                            load: jasmine.createSpy('load').and.returnValue($q.when({}))
+                    $provide.factory('subscriber', function() {
+                        // return function() {
+                        return subscriberSpy;
+                        // };
+                    });
+                    $provide.factory('publisher', function($q) {
+                        return function() {
+                            return $q.when({
+                                element: "element",
+                                id: "id"
+                            });
                         };
                     });
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
+                inject(function(_$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
                     media = _media_;
+                    $q = _$q_;
                     rs = _$rootScope_;
                     to = _$timeout_;
                     subject = _OpenTokSession_;
@@ -103,15 +174,28 @@
                     });
                 }
 
-                var defaultServices = [
-                    ["sessionService", "media"]
-                ];
-                var defaultProps = [
+                var defaults = [
+                    ["sessionService", "media"],
+                    ["subscriberCTX", jasmine.objectContaining({
+                        capabilities: 'asdf',
+                        connection: {},
+                        sessionId: "mySessionId"
+                    })],
+                    ["subscriberService", "subscriber"],
+                    ["publisherCTX", jasmine.objectContaining({
+                        capabilities: 'asdf',
+                        connection: {},
+                        sessionId: "mySessionId"
+                    })],
+                    ["tokenService", "participants"],
+                    ["tokenMethod", "getToken"],
+                    ["token", true],
+                    ["publisherService", "publisher"],
+                    ["publisherParams", []],
                     ["sessionIdMethod", "getSessionId"]
                 ];
                 describe("Default Settings", function() {
-                    defaultProps.forEach(defaultValues);
-                    defaultServices.forEach(defaultValues);
+                    defaults.forEach(defaultValues);
                 });
             });
             describe("inspect", function() {
@@ -129,7 +213,6 @@
                             _injector: jasmine.any(Object),
                             _options: jasmine.any(Object)
                         }));
-
                     });
                 });
                 describe("when passing an argument", function() {
@@ -157,7 +240,6 @@
                         });
                         it("should pass an empty array to sessionObject", function() {
                             expect(media.getSessionId.calls.argsFor(0)).toEqual([]);
-
                         });
                     });
                     describe("When args isn't an array", function() {
@@ -256,24 +338,14 @@
             });
             describe("Commands", function() {
                 var commands = [
-                    ['connect', ['token']],
-                    // wont pass ...not sure why
-                    // ['forceUnpublish', [{
-                    //     stream: 'object'
-                    // }]],
+                    ['forceUnpublish', [{
+                        stream: 'object'
+                    }]],
                     ['forceDisconnect', [{
                         connection: 'object'
                     }]],
                     ['signal', [{
                         data: 'object'
-                    }]],
-                    ['publish', [{
-                        publisher: 'object'
-                    }]],
-                    ['subscribe', [{
-                        stream: "object"
-                    }, "targetElem", {
-                        prop: "object"
                     }]]
                 ];
 
@@ -296,6 +368,110 @@
                     });
                 }
                 commands.forEach(testCommands);
+                describe("Subscribe", function() {
+                    var spy, streamSpy;
+                    beforeEach(function() {
+                        subject = subject();
+                        to.flush();
+                        rs.$digest();
+                        streamSpy = jasmine.createSpy('streamSpy');
+                        spy = subject.inspect('session');
+                    });
+                    it("should throw error if stream obj is undefined", function() {
+                        expect(function() {
+                            subject.subscribe();
+                            rs.$digest();
+                        }).toThrow();
+                    });
+                    it("should pass stream object to session.subscribe", function() {
+                        test = subject.subscribe(streamSpy);
+                        rs.$digest();
+                        expect(spy.subscribe.calls.argsFor(0)[0]).toEqual(streamSpy);
+                    });
+                    describe("When passing args", function() {
+                        it("should pass arg to session.subscribe", function() {
+                            test = subject.subscribe(streamSpy, "target", {
+                                props: "object"
+                            });
+                            rs.$digest();
+                            expect(spy.subscribe.calls.argsFor(0)[1]).toEqual("target");
+                            expect(spy.subscribe.calls.argsFor(0)[2]).toEqual({
+                                props: "object"
+                            });
+                            expect(spy.subscribe.calls.argsFor(0)[3]).toEqual(jasmine.any(Function));
+                        });
+                    });
+                    describe("Without passing args", function() {
+                        it("should pass defaults session.subscribe", function() {
+                            test = subject.subscribe(streamSpy);
+                            rs.$digest();
+                            expect(spy.subscribe.calls.argsFor(0)[1]).toEqual("SubscriberContainer");
+                            expect(spy.subscribe.calls.argsFor(0)[2]).toEqual({
+                                height: 300,
+                                width: 400
+                            });
+                            expect(spy.subscribe.calls.argsFor(0)[3]).toEqual(jasmine.any(Function));
+                        });
+                    });
+                    it("should pass returned subscriber object to subscriber service", function() {
+                        //TODO - check passed args - never reach subscriberSpy
+                        var utils = subject.inspect('utils');
+                        spyOn(utils, 'handler').and.returnValue($q.when({
+                            subscriber: "object"
+                        }));
+                        test = subject.subscribe(streamSpy);
+                        rs.$digest();
+                        expect(subscriberSpy).toHaveBeenCalled();
+
+                    });
+                });
+                describe('connect', function() {
+                    var tokenObj, sessionObj;
+                    beforeEach(function() {
+                        subject = subject();
+                        to.flush();
+                        rs.$digest();
+                        sessionObj = subject.inspect('session');
+                        tokenObj = subject.inspect('tokenObject');
+                        test = subject.connect("token", {
+                            ctx: "obj"
+                        });
+                        to.flush();
+                        rs.$digest();
+                    });
+                    it("should pass args to tokenService.getToken", function() {
+                        expect(tokenObj.getToken).toHaveBeenCalledWith('token');
+                    });
+                    it("should pass token to session.connect", function() {
+                        expect(sessionObj.connect).toHaveBeenCalledWith('participantToken', jasmine.any(Function));
+                    });
+                });
+                describe("Publish", function() {
+                    var spy;
+                    beforeEach(function() {
+                        subject = subject();
+                        to.flush();
+                        rs.$digest();
+                        spy = subject.inspect('session');
+                    });
+                    describe("When passing args", function() {
+                        it("should pass arg to session.publish", function() {
+                            test = subject.publish("args");
+                            rs.$digest();
+                            expect(spy.publish).toHaveBeenCalledWith("args", jasmine.any(Function));
+                        });
+                    });
+                    describe("Without passing args", function() {
+                        it("should pass publisher obj from Api to session.publish", function() {
+                            test = subject.publish();
+                            rs.$digest();
+                            expect(spy.publish).toHaveBeenCalledWith({
+                                element: "element",
+                                id: "id"
+                            }, jasmine.any(Function));
+                        });
+                    });
+                });
             });
         });
     });

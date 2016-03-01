@@ -28,7 +28,7 @@
             }
 
             function isOTLoaded() {
-                angular.isDefined($window.OT);
+                return angular.isDefined($window.OT);
             }
 
             function setScript(options) {

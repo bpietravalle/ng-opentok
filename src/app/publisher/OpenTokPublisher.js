@@ -5,82 +5,118 @@
         .provider('OpenTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
-            var pv = this;
-            pv.setApiKey = setApiKey;
-            pv.$get = main;
+        var pv = this;
+        pv.$get = main;
+        pv._options = {};
+        pv.configure = configure;
 
-            function setApiKey(num) {
-                pv._apiKey = num;
-            }
+        function configure(opts) {
+            angular.extend(pv._options, opts);
+        }
 
-            /** @ngInject */
-            function main($q, OTAsyncLoader, $timeout, $window, otutil) {
-
-                return function(options) {
-                    var apiKey = pv._apiKey,
-                        key = new OpenTokPublisher($q, OTAsyncLoader, $timeout, $window, apiKey, otutil, options);
-                    return key.construct();
-                }
+        /** @ngInject */
+        function main($q, $timeout, OTApi, otutil, $injector) {
+            var options = pv._options;
+            /**
+             * @constructor
+             * @param{String} targetElement - DOM id of publisher object
+             * @param{Object} props - properties of publisher object
+             */
+            return function(targetElement, props) {
+                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $injector, options, targetElement, props);
             }
         }
-        /**
-         * OT.initPublisher(element,properties,cb)
-         */
-
-    function OpenTokPublisher(q, loader, timeout, win, apiKey, utils, options) {
-        this._q = q;
-        this._loader = loader;
-        this._timeout = timeout;
-        this._window = win;
-        this._apiKey = apiKey;
-        this._utils = utils;
-        this._options = options;
-        this._sessionIdMethod = this._options.sessionIdMethod;
-        this._tokenMethod = this._options.tokenMethod;
-        this._sessionIdService = this._options.sessionIdService;
-        this._tokenService = this._options.tokenService;
     }
-    OpenTokPublisher.prototype = {
-        construct: function() {
-            var self = this;
-            var entity = {};
 
-            // entity.getPublisherId = getPublisherId;
-            // entity.getToken = getToken;
-            // entity.initPublisher = initPublisher;
-            // entity.loadAndGetPublisherId = loadAndGetPublisherId;
-            // entity.inspect = inspect;
+    function OpenTokPublisher(q, timeout, api, utils, injector, options, targetElement, props) {
+        var self = this;
+        self._q = q;
+        self._timeout = timeout;
+        self._api = api;
+        self._utils = utils;
+        self._injector = injector;
+        self._options = self._utils.paramCheck(options, "obj", {});
 
-            // function getPublisherId(args, ctx) {
-            //     return self._timeout(function() {
-            //         return self._sessionIdService[self._sessionIdMethod].apply(ctx, args);
-            //     });
-            // }
+        self._targetElement = self._utils.paramCheck(targetElement, "str", undefined);
+        self._props = self._utils.paramCheck(props, "obj", undefined);
 
-            // function getToken(args, ctx) {
-            //     return self._timeout(function() {
-            //         return self._tokenService[self._tokenMethod].apply(ctx, args);
-            //     });
-            // }
+        if (angular.isUndefined(self._targetElement)) {
+            self._targetElement = self._utils.paramCheck(self._options.targetElement, "str", "publisherContainer");
+        }
 
-            // function loadAndGetPublisherId(args, ctx) {
-            //     return self._q.all([load(), getPublisherId(args, ctx)]);
-            // }
+        if (angular.isUndefined(self._props)) {
+            self._props = self._utils.paramCheck(self._options.props, "obj", {
+                height: 300,
+                width: 400
+            });
+        }
 
-            // function initPublisher(str) {
-            //     return self._utils.handler(function(cb) {
-            //         return self._window.OT.initPublisher(self._apiKey, str, cb)
-            //     });
-            // }
+        initPublisher(self._targetElement, self._props);
 
-            // function load() {
-            //     return self._loader.load();
-            // }
+        function initPublisher(elem, props) {
+            return getApi()
+                .then(completeAction)
+                .catch(standardError);
 
-            // function inspect() {}
+            function completeAction(res) {
+                var methodsToExtend = ['on', 'once'];
+                self._publisher = res.initPublisher(elem, props)
+                var keys = Object.keys(self._publisher);
+                self._q.all(keys.map(function(key) {
+                    if (methodsToExtend.indexOf(key) === -1) {
+                        self[key] = self._publisher[key];
+                    }
+                }));
+            }
+        }
 
-            self._entity = entity;
-            return self._entity;
+        function getApi() {
+            return self._api;
+        }
+
+        function standardError(err) {
+            return self._utils.standardError(err);
+        }
+
+    }
+
+    OpenTokPublisher.prototype.on = on;
+    OpenTokPublisher.prototype.once = once;
+    OpenTokPublisher.prototype.inspect = inspect;
+
+    /***************
+     * Queries
+     * ***********/
+
+    function on(eventName, ctx) {
+        var publisher = this._publisher;
+        if (!ctx) {
+            ctx = publisher;
+        }
+        return this._utils.eventHandler(function(cb) {
+            return publisher.on(eventName, cb);
+        }, ctx);
+    }
+
+    function once(eventName, ctx) {
+        var publisher = this._publisher;
+        if (!ctx) {
+            ctx = publisher;
+        }
+        return this._utils.eventHandler(function(cb) {
+            return publisher.once(eventName, cb);
+        }, ctx);
+    }
+
+    function inspect(item) {
+        switch (!item) {
+            case true:
+                return this;
+            case false:
+                item = "_" + item;
+                return this[item];
         }
     }
+
+
 }.call(this));

@@ -1,6 +1,6 @@
 (function() {
     'use strict'
 
-    angular.module('ngOpenTok.models.publisher', ['ngOpenTok.loader','ngOpenTok.utils']);
+    angular.module('ngOpenTok.models.publisher', ['ngOpenTok.OTApi', 'ngOpenTok.utils']);
 
 })();

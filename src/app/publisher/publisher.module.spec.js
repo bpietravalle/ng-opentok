@@ -19,8 +19,11 @@
             beforeEach(function() {
                 deps = module.value('ngOpenTok.models.publisher').requires;
             });
-            it("should depend on ngOpenTok.loader", function() {
-                expect(hasModule("ngOpenTok.loader")).toBeTruthy();
+            it("should depend on ngOpenTok.utils", function() {
+                expect(hasModule("ngOpenTok.utils")).toBeTruthy();
+            });
+            it("should depend on ngOpenTok.OTApi", function() {
+                expect(hasModule("ngOpenTok.OTApi")).toBeTruthy();
             });
         });
 
