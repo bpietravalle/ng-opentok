@@ -4,6 +4,7 @@
     angular.module('ngOpenTok.models.session')
         .provider('OpenTokSession', OpenTokSessionProvider);
 
+    //TODO put subscriber and publisher params in config phase of each provider; separate api into two methds for each ['init','getOptions']
     function OpenTokSessionProvider() {
         var pv = this;
         pv.setApiKey = setApiKey;
@@ -73,15 +74,17 @@
         self._eventsManager = self._injector.get(self._eventsService);
 
         self._publisherService = self._utils.paramCheck(self._options.publisherService, "str", "publisher");
-        self._publisher = self._injector.get(self._publisherService);
-        self._publisherParams = self._utils.paramCheck(self._options.publisherParams, 'arr', []);
+        self._publisherObject = self._injector.get(self._publisherService);
+        self._initializePublisher = initializePublisher;
 
         self._subscriberService = self._utils.paramCheck(self._options.subscriberService, "str", "subscriber");
-        self._subscriberParams = self._utils.paramCheck(self._options.subscriberParams, 'arr', ["SubscriberContainer", {
-            height: 300,
-            width: 400
-        }]);
-        self._subscriber = self._injector.get(self._subscriberService);
+        //TODO change to subscriber.getOptions
+
+        self._subscriberObject = self._injector.get(self._subscriberService);
+        self._subscriberParams = getSubscriberParams;
+        self._initializeSubscriber = initializeSubscriber;
+
+
         initSession(self._params, self._ctx);
 
 
@@ -100,8 +103,6 @@
                         self[key] = self._session[key];
                     }
                 }));
-                self._publisherCTX = self._utils.paramCheck(self._options.publisherCTX, 'obj', self._session);
-                self._subscriberCTX = self._utils.paramCheck(self._options.subscriberCTX, 'obj', self._session);
             }
         }
 
@@ -138,6 +139,36 @@
             return self._api;
         }
 
+        function getSubscriberParams() {
+            return self._subscriberObject.getOptions()
+        }
+
+        function initializePublisher(target, props) {
+            return self._publisherObject(target, props)
+                .then(function(obj) {
+                    self._publisher = obj;
+                    // if (self._multiplePublishers) {
+                    //     self._publisher.init(id, obj);
+                    // }
+
+                    return self._publisher;
+                }).catch(standardError);
+        }
+
+        //TODO subscribers
+
+        function initializeSubscriber(params) {
+            return self._subscriberObject.init(params)
+                .then(function(obj) {
+                    self._subscriber = obj;
+                    // if (self._multipleSubscribers) {
+                    //     self._subscribers.init(id, obj);
+                    // }
+
+                    return self._subscriber;
+                }).catch(standardError);
+        }
+
         function standardError(err) {
             return self._utils.standardError(err);
         }
@@ -164,15 +195,20 @@
         var self = this;
         if (self._token) {
             return self._getToken(str, ctx)
-                .then(submitToken);
-        } else {
-            return submitToken(str);
+                .then(submitToken)
+                .catch(function(err) {
+                    return self._utils.standardError(err);
+                });
         }
+        return submitToken(str);
 
         function submitToken(val) {
             return self._utils.handler(function(cb) {
-                self._session.connect(val, cb);
-            });
+                    self._session.connect(val, cb);
+                })
+                .catch(function(err) {
+                    return self._utils.standardError(err);
+                });
         }
     }
 
@@ -182,57 +218,79 @@
             throw new Error("No stream object provided");
         }
         if (!targetElem) {
-            targetElem = self._subscriberParams[0];
+            targetElem = self._subscriberParams().targetElement;
         }
         if (!props) {
-            props = self._subscriberParams[1];
+            props = self._subscriberParams().targetProperties;
         }
 
         return self._utils.handler(function(cb) {
-            return self._session.subscribe(stream, targetElem, props, cb);
-        }).then(function(res) {
-            self._subscriber.apply(self._subscriberCTX, res);
-        });
+                return self._session.subscribe(stream, targetElem, props, cb);
+            })
+            .then(initializeSubscriber)
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
+
+        function initializeSubscriber(res) {
+            return self._initializeSubscriber(res);
+        }
     }
 
-    function publish(obj) {
-        var self = this;
-        if (!obj) {
-            return initPublisher()
-                .then(publishStream);
-        }
-        return publishStream(obj);
 
-        function initPublisher() {
-            return self._publisher.apply(self._publisherCTX, self._publisherParams)
+    function publish(streamOrElemId, targetProps) {
+        var self = this;
+        if (angular.isString(streamOrElemId) || angular.isUndefined(streamOrElemId)) {
+            return initPublisher(streamOrElemId, targetProps)
+                .then(publishStream)
+                .catch(function(err) {
+                    return self._utils.standardError(err);
+                });
+        }
+        return publishStream(streamOrElemId);
+
+        function initPublisher(target, props) {
+            return self._initializePublisher(target, props)
         }
 
         function publishStream(obj) {
             return self._utils.handler(function(cb) {
-                self._session.publish(obj, cb);
-            });
+                    self._session.publish(obj, cb)
+                })
+                .catch(function(err) {
+                    return self._utils.standardError(err);
+                });
         }
     }
 
     function signal(data) {
         var session = this._session;
         return this._utils.handler(function(cb) {
-            session.signal(data, cb);
-        });
+                session.signal(data, cb);
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
     }
 
     function forceUnpublish(stream) {
         var session = this._session;
         return this._utils.handler(function(cb) {
-            session.forceUnpublish(stream, cb);
-        });
+                session.forceUnpublish(stream, cb);
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
     }
 
     function forceDisconnect(connection) {
         var session = this._session;
         return this._utils.handler(function(cb) {
-            session.forceDisconnect(connection, cb);
-        });
+                session.forceDisconnect(connection, cb);
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
     }
 
     function registerEvents() {

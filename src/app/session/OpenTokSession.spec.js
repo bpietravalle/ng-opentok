@@ -1,9 +1,8 @@
 (function() {
     'use strict';
     describe('OpenTokSession', function() {
-        var to, rs, subject, media, test, $q, ApiSpy, subscriberSpy;
+        var to, rs, subject, media, test, $q, ApiSpy, subscriber;
         beforeEach(function() {
-            subscriberSpy = jasmine.createSpy('subscriberSpy');
             ApiSpy = {
                 initSession: jasmine.createSpy('initSession').and.callFake(function() {
                     return {
@@ -124,10 +123,20 @@
                             })
                         };
                     });
-                    $provide.factory('subscriber', function() {
-                        // return function() {
-                        return subscriberSpy;
-                        // };
+                    $provide.factory('subscriber', function($q) {
+                        return {
+                            getOptions: jasmine.createSpy('getOptions').and.returnValue({
+                                targetElement: 'SubscriberContainer',
+                                targetProperties: {
+                                    height: 300,
+                                    width: 400
+                                }
+                            }),
+                            init: jasmine.createSpy('init').and.returnValue($q.when({
+                                subscriber: "object"
+                            }))
+
+                        };
                     });
                     $provide.factory('publisher', function($q) {
                         return function() {
@@ -141,8 +150,9 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
+                inject(function(_subscriber_, _$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
                     media = _media_;
+                    subscriber = _subscriber_;
                     $q = _$q_;
                     rs = _$rootScope_;
                     to = _$timeout_;
@@ -176,22 +186,11 @@
 
                 var defaults = [
                     ["sessionService", "media"],
-                    ["subscriberCTX", jasmine.objectContaining({
-                        capabilities: 'asdf',
-                        connection: {},
-                        sessionId: "mySessionId"
-                    })],
                     ["subscriberService", "subscriber"],
-                    ["publisherCTX", jasmine.objectContaining({
-                        capabilities: 'asdf',
-                        connection: {},
-                        sessionId: "mySessionId"
-                    })],
                     ["tokenService", "participants"],
                     ["tokenMethod", "getToken"],
                     ["token", true],
                     ["publisherService", "publisher"],
-                    ["publisherParams", []],
                     ["sessionIdMethod", "getSessionId"]
                 ];
                 describe("Default Settings", function() {
@@ -414,15 +413,16 @@
                         });
                     });
                     it("should pass returned subscriber object to subscriber service", function() {
-                        //TODO - check passed args - never reach subscriberSpy
                         var utils = subject.inspect('utils');
                         spyOn(utils, 'handler').and.returnValue($q.when({
                             subscriber: "object"
                         }));
                         test = subject.subscribe(streamSpy);
                         rs.$digest();
-                        expect(subscriberSpy).toHaveBeenCalled();
-
+                        expect(subscriber.init).toHaveBeenCalledWith({
+                            subscriber: "object"
+                        });
+                        expect(subject.inspect('subscriber')).toBeDefined();
                     });
                 });
                 describe('connect', function() {
@@ -454,12 +454,29 @@
                         rs.$digest();
                         spy = subject.inspect('session');
                     });
-                    describe("When passing args", function() {
-                        it("should pass arg to session.publish", function() {
-                            test = subject.publish("args");
+                    describe("When passing an object", function() {
+                        it("should pass object to session.publish", function() {
+                            test = subject.publish({
+                                hi: "I'm a stream"
+                            });
                             rs.$digest();
-                            expect(spy.publish).toHaveBeenCalledWith("args", jasmine.any(Function));
+                            expect(spy.publish).toHaveBeenCalledWith({
+                                hi: "I'm a stream"
+                            }, jasmine.any(Function));
                         });
+                    });
+                    describe("When target and property arguments", function() {
+                        it("should pass object to session.publish", function() {
+                            test = subject.publish("differentTarget", {
+                                different: "properties"
+                            });
+                            rs.$digest();
+                            expect(spy.publish).toHaveBeenCalledWith({
+                                element: "element",
+                                id: "id"
+                            }, jasmine.any(Function));
+                        });
+
                     });
                     describe("Without passing args", function() {
                         it("should pass publisher obj from Api to session.publish", function() {

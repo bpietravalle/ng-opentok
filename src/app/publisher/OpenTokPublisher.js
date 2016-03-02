@@ -5,7 +5,12 @@
         .provider('OpenTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
-        var pv = this;
+        var pv = this,
+            defaultElem = 'PublisherContainer',
+            defaultProp = {
+                height: 300,
+                width: 400
+            };
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
@@ -17,6 +22,9 @@
         /** @ngInject */
         function main($q, $timeout, OTApi, otutil, $injector) {
             var options = pv._options;
+            options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
+            options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
+
             /**
              * @constructor
              * @param{String} targetElement - DOM id of publisher object
@@ -37,19 +45,8 @@
         self._injector = injector;
         self._options = self._utils.paramCheck(options, "obj", {});
 
-        self._targetElement = self._utils.paramCheck(targetElement, "str", undefined);
-        self._props = self._utils.paramCheck(props, "obj", undefined);
-
-        if (angular.isUndefined(self._targetElement)) {
-            self._targetElement = self._utils.paramCheck(self._options.targetElement, "str", "publisherContainer");
-        }
-
-        if (angular.isUndefined(self._props)) {
-            self._props = self._utils.paramCheck(self._options.props, "obj", {
-                height: 300,
-                width: 400
-            });
-        }
+        self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
+        self._props = self._utils.paramCheck(props, "obj", self._options.targetProperties);
 
         initPublisher(self._targetElement, self._props);
 

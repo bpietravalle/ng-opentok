@@ -5,41 +5,57 @@
         .provider('OpenTokSubscriber', OpenTokSubscriberProvider);
 
     function OpenTokSubscriberProvider() {
-        var pv = this;
+        var pv = this,
+            defaultElem = 'SubscriberContainer',
+            defaultProp = {
+                height: 300,
+                width: 400
+            };
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
-
 
         function configure(opts) {
             angular.extend(pv._options, opts);
         }
 
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector) {
+        function main($q, otutil) {
             var options = pv._options;
-            /**
-             * @constructor
-             * @param{Object} param - subscriber object returned from session.subscribe
-             */
-            return function(param) {
-                return new OpenTokSubscriber($q, $timeout, OTApi, otutil, $injector, options, param);
-            }
+            options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
+            options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
+            return {
+                /**
+                 * @constructor
+                 * @param{Object} param - subscriber object returned from session.subscribe
+                 */
+                init: function(param) {
+                    return new OpenTokSubscriber($q, otutil, options, param);
+                },
+
+                /**
+                 * @summary helper method to share default options with sessionObject
+                 */
+
+                getOptions: function() {
+                    return {
+                        targetElement: options.targetElement,
+                        targetProperties: options.targetProperties
+                    };
+                }
+            };
+
         }
     }
 
-    function OpenTokSubscriber(q, timeout, api, utils, injector, options, param) {
+    function OpenTokSubscriber(q, utils, options, param) {
         var self = this;
         self._q = q;
-        self._timeout = timeout;
-        self._api = api;
         self._utils = utils;
-        self._injector = injector;
         self._options = self._utils.paramCheck(options, "obj", {});
         self._param = param
 
         initSubscriber(self._param);
-
 
         function initSubscriber(obj) {
             var methodsToExtend = ['on', 'once', 'getStats'];

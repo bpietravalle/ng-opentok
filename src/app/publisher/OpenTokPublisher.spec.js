@@ -34,7 +34,7 @@
                     });
                     OpenTokPublisherProvider.configure({
                         targetElement: "different",
-                        props: {
+                        targetProperties: {
                             different: "props"
                         }
                     });
@@ -53,7 +53,7 @@
                     rs.$digest();
                 });
                 it("should not call initPublisher with defaults", function() {
-                    expect(ApiSpy.initPublisher).not.toHaveBeenCalledWith("publisherContainer", {
+                    expect(ApiSpy.initPublisher).not.toHaveBeenCalledWith("PublisherContainer", {
                         height: 300,
                         width: 400
                     });
@@ -73,7 +73,7 @@
                     rs.$digest();
                 });
                 it("should not call initPublisher with defaults", function() {
-                    expect(ApiSpy.initPublisher).not.toHaveBeenCalledWith("publisherContainer", {
+                    expect(ApiSpy.initPublisher).not.toHaveBeenCalledWith("PublisherContainer", {
                         height: 300,
                         width: 400
                     });
@@ -109,7 +109,7 @@
             it("should pass default args to initPublisher", function() {
                 subject();
                 rs.$digest();
-                expect(ApiSpy.initPublisher.calls.argsFor(0)[0]).toEqual("publisherContainer");
+                expect(ApiSpy.initPublisher.calls.argsFor(0)[0]).toEqual("PublisherContainer");
                 expect(ApiSpy.initPublisher.calls.argsFor(0)[1]).toEqual({
                     height: 300,
                     width: 400
