@@ -1,7 +1,7 @@
-src/example/*.constant.js
 *.swp
 *.swo
 *.swn
+.coveralls.yml
 .tmp
 node_modules
 bower_components

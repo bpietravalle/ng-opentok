@@ -4,7 +4,6 @@
     angular.module('ngOpenTok.models.session')
         .provider('OpenTokSession', OpenTokSessionProvider);
 
-    //TODO put subscriber and publisher params in config phase of each provider; separate api into two methds for each ['init','getOptions']
     function OpenTokSessionProvider() {
         var pv = this;
         pv.setApiKey = setApiKey;
@@ -21,8 +20,6 @@
         function configure(opts) {
             angular.extend(pv._options, opts);
         }
-
-
 
         /** @ngInject */
         function main($q, $timeout, OTApi, otutil, $injector) {
@@ -57,11 +54,16 @@
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
 
-        self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
-        self._sessionIdMethod = self._utils.paramCheck(self._options.sessionIdMethod, "str", "getSessionId");
-        self._sessionObject = self._injector.get(self._sessionService);
+        self._session = self._utils.paramCheck(self._options.session, 'bool', true);
 
         self._token = self._utils.paramCheck(self._options.token, 'bool', true);
+
+        if (self._session) {
+            self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
+            self._sessionIdMethod = self._utils.paramCheck(self._options.sessionIdMethod, "str", "getSessionId");
+            self._sessionObject = self._injector.get(self._sessionService);
+        }
+
 
         if (self._token) {
             self._tokenService = self._utils.paramCheck(self._options.tokenService, "str", "participants");
@@ -78,16 +80,12 @@
         self._initializePublisher = initializePublisher;
 
         self._subscriberService = self._utils.paramCheck(self._options.subscriberService, "str", "subscriber");
-        //TODO change to subscriber.getOptions
-
         self._subscriberObject = self._injector.get(self._subscriberService);
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
 
         initSession(self._params, self._ctx);
-
-
 
         function initSession(args, ctx) {
             return loadAndGetSessionId(args, ctx)
@@ -107,14 +105,17 @@
         }
 
         function loadAndGetSessionId(args, ctx) {
-            args = arrayCheck(args);
             return self._q.all([getApi(), getSessionId(args, ctx)]);
         }
 
         function getSessionId(args, ctx) {
-            return self._timeout(function() {
-                return self._sessionObject[self._sessionIdMethod].apply(ctx, args);
-            });
+            if (self._session) {
+                args = arrayCheck(args);
+                return self._timeout(function() {
+                    return self._sessionObject[self._sessionIdMethod].apply(ctx, args);
+                });
+            }
+            return self._q.when(args);
         }
 
         function getToken(params, ctx) {

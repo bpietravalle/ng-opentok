@@ -22,12 +22,10 @@ wrench.readdirSyncRecursive('./gulp').filter(function(file) {
 
 gulp.task('concat', function() {
     return gulp.src([
-            "./bower_components/angular-uuid-service/angular-uuid-service.js",
             "./src/app/**/*.module.js", "./src/app/**/*.js",
             "!./src/app/**/*.spec.js",
-            "!./src/app/example/**/*.js"
         ])
-        .pipe(concat("ngOpenTok.js"))
+        .pipe(concat("ng-opentok.js"))
         .pipe(ngAnnotate())
         .pipe(gulp.dest("./dist/scripts/"));
 });

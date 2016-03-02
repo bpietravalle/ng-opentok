@@ -45,10 +45,9 @@
                 expect(function() {
                     subject();
                 }).toThrowError("Please set apiKey during the config phase of your module")
-
             });
         });
-        describe("Without token configuration", function() {
+        describe("Without token and session configuration", function() {
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
                     $provide.value('SessionEvents', {});
@@ -65,32 +64,54 @@
                     });
                     OpenTokSessionProvider.configure({
                         apiKey: 12345,
+                        session: false,
                         token: false
                     });
                 });
-                inject(function(_$timeout_, _OpenTokSession_, _$rootScope_) {
-                    subject = _OpenTokSession_();
+                inject(function(_media_, _$timeout_, _OpenTokSession_, _$rootScope_) {
+                    subject = _OpenTokSession_;
                     rs = _$rootScope_;
-                    to = _$timeout_
+                    to = _$timeout_;
+                    media = _media_;
                 });
-                to.flush();
-                rs.$digest();
             });
             afterEach(function() {
                 subject = null;
             });
 
-            var tokenMeths = ['tokenService', 'tokenMethod', 'tokenObject', 'getToken'];
+            var tsMeths = ['tokenService', 'tokenMethod', 'tokenObject', 'getToken',
+                'sessionService', 'sessionIdMethod', 'sessionObject'
+            ];
 
-            function tokenTest(y) {
+            function tokenAndSessionTest(y) {
                 it(y + " should not be defined", function() {
-                    expect(subject.inspect(y)).not.toBeDefined();
+                    expect(subject().inspect(y)).not.toBeDefined();
                 });
             }
-            tokenMeths.forEach(tokenTest);
+            tsMeths.forEach(tokenAndSessionTest);
+            describe('initization', function() {
+                // var spy;
+                beforeEach(function() {
+                    test = subject("sessionString", "notPassedCTX");
+                    to.flush();
+                    rs.$digest();
+                });
+                it("should pass arg to OT Api", function() {
+                    expect(ApiSpy.initSession).toHaveBeenCalledWith(12345, "sessionString");
+                });
+                it("should not pass ctx argument", function() {
+                    expect(ApiSpy.initSession).not.toHaveBeenCalledWith("notPassedCTX");
+                });
+                it("should not call default sessionService", function() {
+                    expect(media.getSessionId).not.toHaveBeenCalled();
+                });
+            });
             describe('connect', function() {
                 var spy;
                 beforeEach(function() {
+                    subject = subject();
+                    to.flush();
+                    rs.$digest();
                     spy = subject.inspect('session');
                     test = subject.connect("token", "notPassedCTX");
                     rs.$digest();
