@@ -1,19 +1,22 @@
 (function() {
     'use strict';
 
-    angular.module('ngOpenTok')
-        .directive('otSession', otSessionDirective);
+    angular.module('ngOpenTok.directives')
+        .directive('openTokSession', openTokSessionDirective);
 
-    function otSessionDirective() {
+    function openTokSessionDirective() {
 
 			return {
 				restrict: 'AE',
 				scope: {
-					sessionId: '@'
+					sessionId: '=id',
+					subscribers: '=subscribers',
+					publishers: '=publishers',
+					events: '=events'
 					// connection: '=',
 					// capabilities: '='
 				},
-				template: "<div class='angular-ot-session'></div>"
+				template: "<div class='x-opentok-session'></div>"
 			};
 
 

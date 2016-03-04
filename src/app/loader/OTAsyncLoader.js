@@ -20,9 +20,8 @@
 
         /** @ngInject */
         function main($log, $window, rfc4122, $q, OPENTOK_URL) {
-            var scriptId = void 0,
-                usedConfiguration = void 0,
-                deferred = $q.defer();
+            var scriptId = void 0;
+            // usedConfiguration = void 0,
 
             return {
                 load: load
@@ -32,7 +31,7 @@
                 return angular.isDefined($window.OT);
             }
 
-            function setScript(options) {
+            function setScript(options, cb) {
                 var script, scriptElem;
                 if (scriptId) {
                     scriptElem = $window.document.getElementById(scriptId);
@@ -41,12 +40,9 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
-                // script.async = true;
+                //TODO add IE-support
                 script.onload = function() {
-                    if (angular.isFunction($window[options.callback])) {
-                        return $window[options.callback]();
-                    }
-                    deferred.resolve($window.OT);
+                    cb();
                 };
                 if (options.transport === 'auto') {
                     script.src = OPENTOK_URL;
@@ -55,32 +51,33 @@
                 }
 
                 // script.src = script.src + '?callback=' + options.callback;
-                return $window.document.body.appendChild(script);
+                $window.document.body.appendChild(script);
             }
 
             function load() {
                 var options = that.options,
-                    randomizedFunctionName;
+                    deferred = $q.defer();
+                // randomizedFunctionName;
                 if (isOTLoaded()) {
                     deferred.resolve($window.OT);
                     return deferred.promise;
                 }
-                randomizedFunctionName = options.callback = 'onOpenTokReady' + Math.round(Math.random() * 1000);
-                $window[randomizedFunctionName] = function() {
-                    $window[randomizedFunctionName] = null;
+                // randomizedFunctionName = options.callback = 'onOpenTokReady' + Math.round(Math.random() * 1000);
+                var callback = function() {
+                    // $window[randomizedFunctionName] = null;
                     deferred.resolve($window.OT);
                 };
-                if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
-                    $window.document.addEventListener('online', function() {
-                        if (!isOTLoaded()) {
-                            return options;
-                        }
-                    });
-                } else {
-                    setScript(options);
-                }
-                usedConfiguration = options;
-                usedConfiguration.randomizedFunctionName = randomizedFunctionName;
+                // TODO:  test with mobile
+                // if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
+                //     $window.document.addEventListener('online', function() {
+                //         if (!isOTLoaded()) {
+                //             return options;
+                //         }
+                //     });
+                // } else {
+                setScript(options, callback);
+                // usedConfiguration = options;
+                // usedConfiguration.randomizedFunctionName = randomizedFunctionName;
                 return deferred.promise;
             }
         }
