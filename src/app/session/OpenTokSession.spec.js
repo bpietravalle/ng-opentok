@@ -28,8 +28,8 @@
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
                     $provide.value('SessionEvents', {});
-                    $provide.value('Publisher', {});
-                    $provide.value('Subscriber', {});
+                    $provide.value('OpenTokPublisher', {});
+                    $provide.value('OpenTokSubscriber', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
@@ -57,8 +57,8 @@
                         };
                     });
                     $provide.value('participants', {});
-                    $provide.value('publisher', {});
-                    $provide.value('subscriber', {});
+                    $provide.value('OpenTokPublisher', {});
+                    $provide.value('OpenTokSubscriber', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
@@ -144,7 +144,7 @@
                             })
                         };
                     });
-                    $provide.factory('subscriber', function($q) {
+                    $provide.factory('OpenTokSubscriber', function($q) {
                         return {
                             getOptions: jasmine.createSpy('getOptions').and.returnValue({
                                 targetElement: 'SubscriberContainer',
@@ -159,7 +159,7 @@
 
                         };
                     });
-                    $provide.factory('publisher', function($q) {
+                    $provide.factory('OpenTokPublisher', function($q) {
                         return function() {
                             return $q.when({
                                 element: "element",
@@ -171,9 +171,9 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_subscriber_, _$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
+                inject(function(_OpenTokSubscriber_, _$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
                     media = _media_;
-                    subscriber = _subscriber_;
+                    subscriber = _OpenTokSubscriber_;
                     $q = _$q_;
                     rs = _$rootScope_;
                     to = _$timeout_;
@@ -207,11 +207,9 @@
 
                 var defaults = [
                     ["sessionService", "media"],
-                    ["subscriberService", "subscriber"],
                     ["tokenService", "participants"],
                     ["tokenMethod", "getToken"],
                     ["token", true],
-                    ["publisherService", "publisher"],
                     ["sessionIdMethod", "getSessionId"]
                 ];
                 describe("Default Settings", function() {

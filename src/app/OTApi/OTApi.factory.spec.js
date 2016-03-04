@@ -11,9 +11,9 @@
                             info: jasmine.createSpy('info')
                         }
                     });
-                    $provide.factory('OTAsyncLoader', function() {
+                    $provide.factory('OTAsyncLoader', function($q) {
                         return {
-                            load: jasmine.createSpy('load').and.returnValue({})
+                            load: jasmine.createSpy('load').and.returnValue($q.when({}))
                         }
                     });
                 });

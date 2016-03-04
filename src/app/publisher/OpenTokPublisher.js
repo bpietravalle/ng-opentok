@@ -74,7 +74,6 @@
         function standardError(err) {
             return self._utils.standardError(err);
         }
-
     }
 
     OpenTokPublisher.prototype.on = on;

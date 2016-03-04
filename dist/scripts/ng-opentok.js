@@ -43,7 +43,7 @@
 (function() {
     'use strict'
 
-    angular.module('ngOpenTok.models.session', ['ngOpenTok.OTApi', 'ngOpenTok.utils']);
+    angular.module('ngOpenTok.models.session', ['ngOpenTok.OTApi', 'ngOpenTok.utils', 'ngOpenTok.models.publisher', 'ngOpenTok.models.subscriber']);
 
 })();
 
@@ -67,7 +67,12 @@
     function OTApiFactory($q, $window, $log, OTAsyncLoader) {
         if (angular.isUndefined($window.OT)) {
             $log.info("Opentok Api is not available.  Attempting to load Api now");
-            return OTAsyncLoader.load();
+            return OTAsyncLoader.load()
+                .then(function(res) {
+                    return res;
+                }).catch(function(err) {
+                    return $q.reject(err);
+                });
         }
 
         return $q.when($window.OT);
@@ -390,7 +395,6 @@
         function standardError(err) {
             return self._utils.standardError(err);
         }
-
     }
 
     OpenTokPublisher.prototype.on = on;
@@ -441,7 +445,7 @@
         .provider('OpenTokSession', OpenTokSessionProvider);
 
     function OpenTokSessionProvider() {
-        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector"];
+        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector", "OpenTokSubscriber", "OpenTokPublisher"];
         var pv = this;
         pv.setApiKey = setApiKey;
         pv.$get = main;
@@ -459,7 +463,7 @@
         }
 
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector) {
+        function main($q, $timeout, OTApi, otutil, $injector, OpenTokSubscriber, OpenTokPublisher) {
             /**
              * @constructor
              * @param{Array} params ["params","to","pass","to","session","service"]
@@ -474,12 +478,12 @@
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
 
-                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, params, ctx, options);
+                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, OpenTokSubscriber, OpenTokPublisher, params, ctx, options);
             }
         }
     }
 
-    function OpenTokSession(q, timeout, api, utils, injector, params, ctx, options) {
+    function OpenTokSession(q, timeout, api, utils, injector, subscriber, publisher, params, ctx, options) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
@@ -492,7 +496,6 @@
         self._apiKey = options.apiKey;
 
         self._session = self._utils.paramCheck(self._options.session, 'bool', true);
-
         self._token = self._utils.paramCheck(self._options.token, 'bool', true);
 
         if (self._session) {
@@ -509,20 +512,22 @@
             self._getToken = getToken;
         }
 
-        self._eventsService = self._utils.paramCheck(self._options.eventsService, "str", "SessionEvents");
-        self._eventsManager = self._injector.get(self._eventsService);
-
-        self._publisherService = self._utils.paramCheck(self._options.publisherService, "str", "publisher");
-        self._publisherObject = self._injector.get(self._publisherService);
+        self._publisherObject = publisher
         self._initializePublisher = initializePublisher;
 
-        self._subscriberService = self._utils.paramCheck(self._options.subscriberService, "str", "subscriber");
-        self._subscriberObject = self._injector.get(self._subscriberService);
+        self._subscriberObject = subscriber
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
+        initSession(self._params, getCTX(self._ctx));
 
-        initSession(self._params, self._ctx);
+        function getCTX(arg) {
+            if (angular.isUndefined(arg)) {
+                return self;
+            }
+            return arg;
+        }
+
 
         function initSession(args, ctx) {
             return loadAndGetSessionId(args, ctx)
@@ -556,6 +561,7 @@
         }
 
         function getToken(params, ctx) {
+            ctx = getCTX(ctx);
             params = arrayCheck(params);
             return self._timeout(function() {
                 return self._tokenObject[self._tokenMethod].apply(ctx, params);
@@ -585,9 +591,6 @@
             return self._publisherObject(target, props)
                 .then(function(obj) {
                     self._publisher = obj;
-                    // if (self._multiplePublishers) {
-                    //     self._publisher.init(id, obj);
-                    // }
 
                     return self._publisher;
                 }).catch(standardError);
@@ -622,7 +625,6 @@
     OpenTokSession.prototype.on = on;
     OpenTokSession.prototype.once = once;
     OpenTokSession.prototype.inspect = inspect;
-    OpenTokSession.prototype.registerEvents = registerEvents;
 
 
     /***************
@@ -731,9 +733,6 @@
             });
     }
 
-    function registerEvents() {
-        return this._eventsManager(this);
-    }
 
     /***************
      * Queries
