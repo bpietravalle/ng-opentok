@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.subscriber')
-        .provider('OpenTokSubscriber', OpenTokSubscriberProvider);
+        .provider('openTokSubscriber', OpenTokSubscriberProvider);
 
     function OpenTokSubscriberProvider() {
         var pv = this,
@@ -24,28 +24,32 @@
             var options = pv._options;
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
+
             return {
-                /**
-                 * @constructor
-                 * @param{Object} param - subscriber object returned from session.subscribe
-                 */
-                init: function(param) {
-                    return new OpenTokSubscriber($q, otutil, options, param);
-                },
-
-                /**
-                 * @summary helper method to share default options with sessionObject
-                 */
-
-                getOptions: function() {
-                    return {
-                        targetElement: options.targetElement,
-                        targetProperties: options.targetProperties
-                    };
-                }
+                init: init,
+                getOptions: getOptions
             };
 
+            /**
+             * @constructor
+             * @param{Object} param - subscriber object returned from session.subscribe
+             */
+            function init(param) {
+                return new OpenTokSubscriber($q, otutil, options, param);
+            }
+
+            /**
+             * @summary helper method to share default options with sessionObject
+             */
+
+            function getOptions() {
+                return {
+                    targetElement: options.targetElement,
+                    targetProperties: options.targetProperties
+                };
+            }
         }
+
     }
 
     function OpenTokSubscriber(q, utils, options, param) {

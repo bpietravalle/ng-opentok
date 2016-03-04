@@ -112,7 +112,7 @@
     //Inspired by (ie taken from) angular-google-maps - thanks!
 
     function OTAsyncLoaderProvider() {
-        main.$inject = ["$window", "rfc4122", "$q", "OPENTOK_URL"];
+        main.$inject = ["$log", "$window", "rfc4122", "$q", "OPENTOK_URL"];
         var that = this;
         that.options = {
             transport: 'https'
@@ -126,9 +126,10 @@
         that.$get = main;
 
         /** @ngInject */
-        function main($window, rfc4122, $q, OPENTOK_URL) {
-            var scriptId = null,
-                usedConfiguration = null;
+        function main($log, $window, rfc4122, $q, OPENTOK_URL) {
+            var scriptId = void 0,
+                usedConfiguration = void 0,
+                deferred = $q.defer();
 
             return {
                 load: load
@@ -147,18 +148,26 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
+                // script.async = true;
+                script.onload = function() {
+                    if (angular.isFunction($window[options.callback])) {
+                        return $window[options.callback]();
+                    }
+                    deferred.resolve($window.OT);
+                };
                 if (options.transport === 'auto') {
                     script.src = OPENTOK_URL;
                 } else {
                     script.src = options.transport + ':' + OPENTOK_URL;
                 }
+
+                // script.src = script.src + '?callback=' + options.callback;
                 return $window.document.body.appendChild(script);
             }
 
             function load() {
                 var options = that.options,
-                    randomizedFunctionName,
-                    deferred = $q.defer();
+                    randomizedFunctionName;
                 if (isOTLoaded()) {
                     deferred.resolve($window.OT);
                     return deferred.promise;
@@ -168,7 +177,15 @@
                     $window[randomizedFunctionName] = null;
                     deferred.resolve($window.OT);
                 };
-                setScript(options);
+                if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
+                    $window.document.addEventListener('online', function() {
+                        if (!isOTLoaded()) {
+                            return options;
+                        }
+                    });
+                } else {
+                    setScript(options);
+                }
                 usedConfiguration = options;
                 usedConfiguration.randomizedFunctionName = randomizedFunctionName;
                 return deferred.promise;
@@ -322,7 +339,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.publisher')
-        .provider('OpenTokPublisher', OpenTokPublisherProvider);
+        .provider('openTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
         main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector"];
@@ -346,13 +363,32 @@
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
 
+            return {
+                init: init,
+                getOptions: getOptions
+            };
+
+
             /**
              * @constructor
-             * @param{String} targetElement - DOM id of publisher object
-             * @param{Object} props - properties of publisher object
+             * @param{String} [targetElement] - DOM id of publisher object
+             * @param{Object} [props] - properties of publisher object
+             * @description params should be defined during config phase
              */
-            return function(targetElement, props) {
+
+            function init(targetElement, props) {
                 return new OpenTokPublisher($q, $timeout, OTApi, otutil, $injector, options, targetElement, props);
+            }
+
+            /**
+             * @summary helper method to share default options with sessionObject
+             */
+
+            function getOptions() {
+                return {
+                    targetElement: options.targetElement,
+                    targetProperties: options.targetProperties
+                };
             }
         }
     }
@@ -441,16 +477,20 @@
 (function() {
     'use strict';
 
+    OpenTokSessionProvider.$inject = ["openTokPublisherProvider", "openTokSubscriberProvider"];
     angular.module('ngOpenTok.models.session')
-        .provider('OpenTokSession', OpenTokSessionProvider);
+        .provider('openTokSession', OpenTokSessionProvider);
 
-    function OpenTokSessionProvider() {
-        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector", "OpenTokSubscriber", "OpenTokPublisher"];
+    function OpenTokSessionProvider(openTokPublisherProvider, openTokSubscriberProvider) {
+        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector", "openTokSubscriber", "openTokPublisher", "$log"];
         var pv = this;
         pv.setApiKey = setApiKey;
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
+        pv.configurePublisher = configurePublisher;
+        pv.configureSubscriber = configureSubscriber;
+
 
         function setApiKey(num) {
             angular.extend(pv._options, {
@@ -462,14 +502,23 @@
             angular.extend(pv._options, opts);
         }
 
+        function configureSubscriber(opts) {
+            openTokSubscriberProvider.configure(opts)
+        }
+
+        function configurePublisher(opts) {
+            openTokPublisherProvider.configure(opts)
+        }
+
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector, OpenTokSubscriber, OpenTokPublisher) {
+        function main($q, $timeout, OTApi, otutil, $injector, openTokSubscriber, openTokPublisher, $log) {
             /**
              * @constructor
-             * @param{Array} params ["params","to","pass","to","session","service"]
-             * @param{Object} [ctx] context of method
+             * @param{Array|String} paramsOrSessionId if you set session: true in config phase then
+             * ["params","to","pass","to","session","service"].  Otherwise this is the sessionId
+             * @param{Object} [ctx] context of method - only used if you set sesion: true in config phase
              */
-            return function(params, ctx, options) {
+            return function(paramsOrSessionId, ctx, options) {
                 if (!options) {
                     options = {};
                 }
@@ -478,25 +527,31 @@
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
 
-                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, OpenTokSubscriber, OpenTokPublisher, params, ctx, options);
+                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, openTokSubscriber, openTokPublisher, $log, paramsOrSessionId, ctx, options);
             }
         }
     }
 
-    function OpenTokSession(q, timeout, api, utils, injector, subscriber, publisher, params, ctx, options) {
+    /*
+     * false = default
+     * add setOptions to publisher
+     */
+
+    function OpenTokSession(q, timeout, api, utils, injector, subscriber, publisher, log, params, ctx, options) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
         self._api = api;
         self._utils = utils;
         self._injector = injector;
+        self._log = log;
         self._params = params;
         self._ctx = ctx;
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
 
-        self._session = self._utils.paramCheck(self._options.session, 'bool', true);
-        self._token = self._utils.paramCheck(self._options.token, 'bool', true);
+        self._session = self._utils.paramCheck(self._options.session, 'bool', false);
+        self._token = self._utils.paramCheck(self._options.token, 'bool', false);
 
         if (self._session) {
             self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
@@ -519,11 +574,10 @@
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
-        initSession(self._params, getCTX(self._ctx));
 
         function getCTX(arg) {
             if (angular.isUndefined(arg)) {
-                return self;
+                return null;
             }
             return arg;
         }
@@ -532,6 +586,7 @@
         function initSession(args, ctx) {
             return loadAndGetSessionId(args, ctx)
                 .then(completeAction)
+                .then(returnVal)
                 .catch(standardError);
 
             function completeAction(res) {
@@ -544,6 +599,11 @@
                     }
                 }));
             }
+
+            function returnVal() {
+                return self;
+            }
+
         }
 
         function loadAndGetSessionId(args, ctx) {
@@ -587,8 +647,8 @@
             return self._subscriberObject.getOptions()
         }
 
-        function initializePublisher(target, props) {
-            return self._publisherObject(target, props)
+        function initializePublisher() {
+            return self._publisherObject.init()
                 .then(function(obj) {
                     self._publisher = obj;
 
@@ -596,7 +656,6 @@
                 }).catch(standardError);
         }
 
-        //TODO subscribers
 
         function initializeSubscriber(params) {
             return self._subscriberObject.init(params)
@@ -613,6 +672,8 @@
         function standardError(err) {
             return self._utils.standardError(err);
         }
+
+        return initSession(self._params, getCTX(self._ctx));
 
     }
 
@@ -678,19 +739,21 @@
     }
 
 
-    function publish(streamOrElemId, targetProps) {
+
+    function publish(publisher) {
         var self = this;
-        if (angular.isString(streamOrElemId) || angular.isUndefined(streamOrElemId)) {
-            return initPublisher(streamOrElemId, targetProps)
+
+        if (angular.isUndefined(publisher)) {
+            return initPublisher()
                 .then(publishStream)
                 .catch(function(err) {
                     return self._utils.standardError(err);
                 });
         }
-        return publishStream(streamOrElemId);
+        return publishStream(publisher);
 
-        function initPublisher(target, props) {
-            return self._initializePublisher(target, props)
+        function initPublisher() {
+            return self._initializePublisher()
         }
 
         function publishStream(obj) {
@@ -775,7 +838,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.subscriber')
-        .provider('OpenTokSubscriber', OpenTokSubscriberProvider);
+        .provider('openTokSubscriber', OpenTokSubscriberProvider);
 
     function OpenTokSubscriberProvider() {
         main.$inject = ["$q", "otutil"];
@@ -798,28 +861,32 @@
             var options = pv._options;
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
+
             return {
-                /**
-                 * @constructor
-                 * @param{Object} param - subscriber object returned from session.subscribe
-                 */
-                init: function(param) {
-                    return new OpenTokSubscriber($q, otutil, options, param);
-                },
-
-                /**
-                 * @summary helper method to share default options with sessionObject
-                 */
-
-                getOptions: function() {
-                    return {
-                        targetElement: options.targetElement,
-                        targetProperties: options.targetProperties
-                    };
-                }
+                init: init,
+                getOptions: getOptions
             };
 
+            /**
+             * @constructor
+             * @param{Object} param - subscriber object returned from session.subscribe
+             */
+            function init(param) {
+                return new OpenTokSubscriber($q, otutil, options, param);
+            }
+
+            /**
+             * @summary helper method to share default options with sessionObject
+             */
+
+            function getOptions() {
+                return {
+                    targetElement: options.targetElement,
+                    targetProperties: options.targetProperties
+                };
+            }
         }
+
     }
 
     function OpenTokSubscriber(q, utils, options, param) {

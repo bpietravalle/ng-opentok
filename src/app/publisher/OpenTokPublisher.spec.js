@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    describe('OpenTokPublisher', function() {
+    describe('openTokPublisher', function() {
         var subject, rs, ApiSpy;
         beforeEach(function() {
             ApiSpy = {
@@ -25,22 +25,70 @@
             subject = null;
             ApiSpy = null;
         });
+        describe("getOptions", function() {
+            describe("With Defaults", function() {
+                beforeEach(function() {
+                    module('ngOpenTok.models.publisher');
+                    inject(function(_openTokPublisher_) {
+                        subject = _openTokPublisher_.getOptions()
+                    });
+                });
+                afterEach(function() {
+                    subject = null;
+                });
+                it("should return params", function() {
+
+                    expect(subject.targetElement).toEqual("PublisherContainer");
+                    expect(subject.targetProperties).toEqual({
+                        height: 300,
+                        width: 400
+                    });
+                });
+            });
+            describe("With Configured", function() {
+                beforeEach(function() {
+                    module('ngOpenTok.models.publisher', function(openTokPublisherProvider) {
+                        openTokPublisherProvider.configure({
+                            targetElement: "different",
+                            targetProperties: {
+                                height: 500,
+                                width: 300
+                            }
+                        });
+
+                        inject(function(_openTokPublisher_) {
+                            subject = _openTokPublisher_.getOptions()
+                        });
+                    });
+                    afterEach(function() {
+                        subject = null;
+                    });
+                    it("should return preset params", function() {
+                        expect(subject.targetElement).toEqual("different");
+                        expect(subject.targetProperties).toEqual({
+                            height: 500,
+                            width: 300
+                        });
+                    });
+                });
+            });
+        });
 
         describe("Configured Setup - in module's config phase", function() {
             beforeEach(function() {
-                module('ngOpenTok.models.publisher', function($provide, OpenTokPublisherProvider) {
+                module('ngOpenTok.models.publisher', function($provide, openTokPublisherProvider) {
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
-                    OpenTokPublisherProvider.configure({
+                    openTokPublisherProvider.configure({
                         targetElement: "different",
                         targetProperties: {
                             different: "props"
                         }
                     });
                 });
-                inject(function(_$rootScope_, _OpenTokPublisher_) {
-                    subject = _OpenTokPublisher_;
+                inject(function(_$rootScope_, _openTokPublisher_) {
+                    subject = _openTokPublisher_;
                     rs = _$rootScope_;
                 });
             });
@@ -49,7 +97,7 @@
             });
             describe("With no args passed to Ctor", function() {
                 beforeEach(function() {
-                    subject();
+                    subject.init();
                     rs.$digest();
                 });
                 it("should not call initPublisher with defaults", function() {
@@ -67,7 +115,7 @@
             });
             describe("With passing args to Ctor", function() {
                 beforeEach(function() {
-                    subject("evenMoreDifferent", {
+                    subject.init("evenMoreDifferent", {
                         veryDifferent: "props"
                     });
                     rs.$digest();
@@ -98,8 +146,8 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_$rootScope_, _OpenTokPublisher_) {
-                    subject = _OpenTokPublisher_;
+                inject(function(_$rootScope_, _openTokPublisher_) {
+                    subject = _openTokPublisher_;
                     rs = _$rootScope_;
                 });
             });
@@ -107,7 +155,7 @@
                 subject = null;
             });
             it("should pass default args to initPublisher", function() {
-                subject();
+                subject.init();
                 rs.$digest();
                 expect(ApiSpy.initPublisher.calls.argsFor(0)[0]).toEqual("PublisherContainer");
                 expect(ApiSpy.initPublisher.calls.argsFor(0)[1]).toEqual({
@@ -123,9 +171,9 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_OpenTokPublisher_, _$rootScope_) {
+                inject(function(_openTokPublisher_, _$rootScope_) {
                     rs = _$rootScope_;
-                    subject = _OpenTokPublisher_();
+                    subject = _openTokPublisher_.init();
                 });
                 rs.$digest();
 

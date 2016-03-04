@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    describe('OpenTokSession', function() {
+    describe('openTokSession', function() {
         var to, rs, subject, media, test, $q, ApiSpy, subscriber;
         beforeEach(function() {
             ApiSpy = {
@@ -28,14 +28,14 @@
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
                     $provide.value('SessionEvents', {});
-                    $provide.value('OpenTokPublisher', {});
-                    $provide.value('OpenTokSubscriber', {});
+                    $provide.value('openTokPublisher', {});
+                    $provide.value('openTokSubscriber', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_OpenTokSession_) {
-                    subject = _OpenTokSession_;
+                inject(function(_openTokSession_) {
+                    subject = _openTokSession_;
                 });
             });
             afterEach(function() {
@@ -49,7 +49,7 @@
         });
         describe("Without token and session configuration", function() {
             beforeEach(function() {
-                module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
+                module('ngOpenTok.models.session', function($provide, openTokSessionProvider) {
                     $provide.value('SessionEvents', {});
                     $provide.factory('media', function() {
                         return {
@@ -57,19 +57,19 @@
                         };
                     });
                     $provide.value('participants', {});
-                    $provide.value('OpenTokPublisher', {});
-                    $provide.value('OpenTokSubscriber', {});
+                    $provide.value('openTokPublisher', {});
+                    $provide.value('openTokSubscriber', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
-                    OpenTokSessionProvider.configure({
+                    openTokSessionProvider.configure({
                         apiKey: 12345,
                         session: false,
                         token: false
                     });
                 });
-                inject(function(_media_, _$timeout_, _OpenTokSession_, _$rootScope_) {
-                    subject = _OpenTokSession_;
+                inject(function(_media_, _$timeout_, _openTokSession_, _$rootScope_) {
+                    subject = _openTokSession_;
                     rs = _$rootScope_;
                     to = _$timeout_;
                     media = _media_;
@@ -124,11 +124,15 @@
                 });
             });
         });
-        describe("With Valid configuration", function() {
+        describe("When using session and token services", function() {
             beforeEach(function() {
 
-                module('ngOpenTok.models.session', function($provide, OpenTokSessionProvider) {
-                    OpenTokSessionProvider.setApiKey(12345);
+                module('ngOpenTok.models.session', function($provide, openTokSessionProvider) {
+                    openTokSessionProvider.setApiKey(12345);
+                    openTokSessionProvider.configure({
+                        session: true,
+                        token: true
+                    });
                     $provide.factory('SessionEvents', function() {
                         return {};
                     });
@@ -144,7 +148,7 @@
                             })
                         };
                     });
-                    $provide.factory('OpenTokSubscriber', function($q) {
+                    $provide.factory('openTokSubscriber', function($q) {
                         return {
                             getOptions: jasmine.createSpy('getOptions').and.returnValue({
                                 targetElement: 'SubscriberContainer',
@@ -159,25 +163,31 @@
 
                         };
                     });
-                    $provide.factory('OpenTokPublisher', function($q) {
-                        return function() {
-                            return $q.when({
-                                element: "element",
-                                id: "id"
-                            });
+                    $provide.factory('openTokPublisher', function($q) {
+                        return {
+                            getOptions: jasmine.createSpy('getOptions').and.returnValue({
+                                targetElement: 'PublisherContainer',
+                                targetProperties: {
+                                    height: 300,
+                                    width: 400
+                                }
+                            }),
+                            init: jasmine.createSpy('init').and.returnValue($q.when({
+                                publisher: "object"
+                            }))
                         };
                     });
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_OpenTokSubscriber_, _$q_, _$timeout_, _OpenTokSession_, _$rootScope_, _media_) {
+                inject(function(_openTokSubscriber_, _$q_, _$timeout_, _openTokSession_, _$rootScope_, _media_) {
                     media = _media_;
-                    subscriber = _OpenTokSubscriber_;
+                    subscriber = _openTokSubscriber_;
                     $q = _$q_;
                     rs = _$rootScope_;
                     to = _$timeout_;
-                    subject = _OpenTokSession_;
+                    subject = _openTokSession_;
                 });
             });
             afterEach(function() {
@@ -484,26 +494,12 @@
                             }, jasmine.any(Function));
                         });
                     });
-                    describe("When target and property arguments", function() {
-                        it("should pass object to session.publish", function() {
-                            test = subject.publish("differentTarget", {
-                                different: "properties"
-                            });
-                            rs.$digest();
-                            expect(spy.publish).toHaveBeenCalledWith({
-                                element: "element",
-                                id: "id"
-                            }, jasmine.any(Function));
-                        });
-
-                    });
                     describe("Without passing args", function() {
                         it("should pass publisher obj from Api to session.publish", function() {
                             test = subject.publish();
                             rs.$digest();
                             expect(spy.publish).toHaveBeenCalledWith({
-                                element: "element",
-                                id: "id"
+                                publisher: 'object'
                             }, jasmine.any(Function));
                         });
                     });

@@ -19,9 +19,10 @@
         that.$get = main;
 
         /** @ngInject */
-        function main($window, rfc4122, $q, OPENTOK_URL) {
-            var scriptId = null,
-                usedConfiguration = null;
+        function main($log, $window, rfc4122, $q, OPENTOK_URL) {
+            var scriptId = void 0,
+                usedConfiguration = void 0,
+                deferred = $q.defer();
 
             return {
                 load: load
@@ -40,18 +41,26 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
+                // script.async = true;
+                script.onload = function() {
+                    if (angular.isFunction($window[options.callback])) {
+                        return $window[options.callback]();
+                    }
+                    deferred.resolve($window.OT);
+                };
                 if (options.transport === 'auto') {
                     script.src = OPENTOK_URL;
                 } else {
                     script.src = options.transport + ':' + OPENTOK_URL;
                 }
+
+                // script.src = script.src + '?callback=' + options.callback;
                 return $window.document.body.appendChild(script);
             }
 
             function load() {
                 var options = that.options,
-                    randomizedFunctionName,
-                    deferred = $q.defer();
+                    randomizedFunctionName;
                 if (isOTLoaded()) {
                     deferred.resolve($window.OT);
                     return deferred.promise;
@@ -61,7 +70,15 @@
                     $window[randomizedFunctionName] = null;
                     deferred.resolve($window.OT);
                 };
-                setScript(options);
+                if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
+                    $window.document.addEventListener('online', function() {
+                        if (!isOTLoaded()) {
+                            return options;
+                        }
+                    });
+                } else {
+                    setScript(options);
+                }
                 usedConfiguration = options;
                 usedConfiguration.randomizedFunctionName = randomizedFunctionName;
                 return deferred.promise;

@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    describe('OpenTokSubscriber', function() {
+    describe('openTokSubscriber', function() {
         var test, subject, rs, subscriberSpy;
         afterEach(function() {
             subject = null;
@@ -21,8 +21,8 @@
             describe("With Defaults", function() {
                 beforeEach(function() {
                     module('ngOpenTok.models.subscriber');
-                    inject(function(_OpenTokSubscriber_) {
-                        subject = _OpenTokSubscriber_.getOptions()
+                    inject(function(_openTokSubscriber_) {
+                        subject = _openTokSubscriber_.getOptions()
                     });
                 });
                 afterEach(function() {
@@ -39,8 +39,8 @@
             });
             describe("With Configured", function() {
                 beforeEach(function() {
-                    module('ngOpenTok.models.subscriber', function(OpenTokSubscriberProvider) {
-                        OpenTokSubscriberProvider.configure({
+                    module('ngOpenTok.models.subscriber', function(openTokSubscriberProvider) {
+                        openTokSubscriberProvider.configure({
                             targetElement: "different",
                             targetProperties: {
                                 height: 500,
@@ -48,8 +48,8 @@
                             }
                         });
 
-                        inject(function(_OpenTokSubscriber_) {
-                            subject = _OpenTokSubscriber_.getOptions()
+                        inject(function(_openTokSubscriber_) {
+                            subject = _openTokSubscriber_.getOptions()
                         });
                     });
                     afterEach(function() {
@@ -68,9 +68,9 @@
         describe("With Valid configuration", function() {
             beforeEach(function() {
                 module('ngOpenTok.models.subscriber');
-                inject(function(_OpenTokSubscriber_, _$rootScope_) {
+                inject(function(_openTokSubscriber_, _$rootScope_) {
                     rs = _$rootScope_;
-                    subject = _OpenTokSubscriber_.init(subscriberSpy);
+                    subject = _openTokSubscriber_.init(subscriberSpy);
                 });
                 rs.$digest();
 

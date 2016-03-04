@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.publisher')
-        .provider('OpenTokPublisher', OpenTokPublisherProvider);
+        .provider('openTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
         var pv = this,
@@ -25,13 +25,32 @@
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
 
+            return {
+                init: init,
+                getOptions: getOptions
+            };
+
+
             /**
              * @constructor
-             * @param{String} targetElement - DOM id of publisher object
-             * @param{Object} props - properties of publisher object
+             * @param{String} [targetElement] - DOM id of publisher object
+             * @param{Object} [props] - properties of publisher object
+             * @description params should be defined during config phase
              */
-            return function(targetElement, props) {
+
+            function init(targetElement, props) {
                 return new OpenTokPublisher($q, $timeout, OTApi, otutil, $injector, options, targetElement, props);
+            }
+
+            /**
+             * @summary helper method to share default options with sessionObject
+             */
+
+            function getOptions() {
+                return {
+                    targetElement: options.targetElement,
+                    targetProperties: options.targetProperties
+                };
             }
         }
     }
