@@ -20,7 +20,7 @@
         }
 
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector) {
+        function main($q, $timeout, OTApi, otutil, $log) {
             var options = pv._options;
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
@@ -39,7 +39,7 @@
              */
 
             function init(targetElement, props) {
-                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $injector, options, targetElement, props);
+                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $log, options, targetElement, props);
             }
 
             /**
@@ -55,13 +55,13 @@
         }
     }
 
-    function OpenTokPublisher(q, timeout, api, utils, injector, options, targetElement, props) {
+    function OpenTokPublisher(q, timeout, api, utils, log, options, targetElement, props) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
         self._api = api;
         self._utils = utils;
-        self._injector = injector;
+        self._log = log;
         self._options = self._utils.paramCheck(options, "obj", {});
 
         self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
@@ -70,6 +70,7 @@
         initPublisher(self._targetElement, self._props);
 
         function initPublisher(elem, props) {
+
             return getApi()
                 .then(completeAction)
                 .catch(standardError);

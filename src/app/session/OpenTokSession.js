@@ -13,7 +13,6 @@
         pv.configurePublisher = configurePublisher;
         pv.configureSubscriber = configureSubscriber;
 
-
         function setApiKey(num) {
             angular.extend(pv._options, {
                 apiKey: num
@@ -66,14 +65,19 @@
         self._api = api;
         self._utils = utils;
         self._injector = injector;
+        self._subscriberObject = subscriber
+        self._publisherObject = publisher
         self._log = log;
         self._params = params;
         self._ctx = ctx;
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
-
         self._session = self._utils.paramCheck(self._options.session, 'bool', false);
         self._token = self._utils.paramCheck(self._options.token, 'bool', false);
+
+        if (self._token) {
+            self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
+        }
 
         if (self._session) {
             self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
@@ -89,10 +93,8 @@
             self._getToken = getToken;
         }
 
-        self._publisherObject = publisher
         self._initializePublisher = initializePublisher;
 
-        self._subscriberObject = subscriber
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
@@ -120,6 +122,10 @@
                         self[key] = self._session[key];
                     }
                 }));
+
+                // if(self._autoConnect){
+                //   self._session.
+                // }
             }
 
             // function returnVal() {
@@ -173,7 +179,6 @@
             return self._publisherObject.init()
                 .then(function(obj) {
                     self._publisher = obj;
-
                     return self._publisher;
                 }).catch(standardError);
         }

@@ -22,6 +22,13 @@
 (function() {
     'use strict'
 
+    angular.module('ngOpenTok.directives', ['ngOpenTok.models']);
+
+})();
+
+(function() {
+    'use strict'
+
     angular.module('ngOpenTok.loader', ['uuid']);
 
 })();
@@ -84,21 +91,71 @@
 (function() {
     'use strict';
 
-    angular.module('ngOpenTok')
-        .directive('otSession', otSessionDirective);
+    angular.module('ngOpenTok.directives')
+        .directive('opentokPublisher', openTokPublisherDirective);
 
-    function otSessionDirective() {
+    function openTokPublisherDirective() {
 
-			return {
-				restrict: 'AE',
-				scope: {
-					sessionId: '@'
-					// connection: '=',
-					// capabilities: '='
-				},
-				template: "<div class='angular-ot-session'></div>"
-			};
+        return {
+            restrict: 'E',
+            scope: {
+                token: '=',
+                events: '=',
+                targetElementId: '=',
+                targetProperties: '='
+            },
+            template: "<div x-opentok-publisher></div>",
+            controller: OpenTokPublisherController,
+            controllerAs: 'vm',
+            bindToController: true,
+            link: function(scope) {
+                scope
+            }
+        };
 
+        /** @ngInject */
+        function OpenTokPublisherController() {
+            var vm = this;
+            vm
+
+        }
+
+    }
+
+})();
+
+(function() {
+    'use strict';
+
+    angular.module('ngOpenTok.directives')
+        .directive('openTokSession', openTokSessionDirective);
+
+    function openTokSessionDirective() {
+
+        OpenTokSessionController.$inject = ["$element"];
+        return {
+            restrict: 'E',
+            scope: {
+                token: '=',
+                sessionId: '=',
+                subscribers: '=',
+                publishers: '=',
+                events: '='
+                    // connection: '=',
+                    // capabilities: '='
+            },
+            template: "<div class='opentok-session'><ng-transclude></ng-transclude></div>",
+            controller: OpenTokSessionController,
+            controllerAs: 'vm',
+            bindToController: true
+        };
+
+        /** @ngInject */
+        function OpenTokSessionController($element) {
+            var vm = this;
+
+
+        }
 
     }
 
@@ -127,9 +184,8 @@
 
         /** @ngInject */
         function main($log, $window, rfc4122, $q, OPENTOK_URL) {
-            var scriptId = void 0,
-                usedConfiguration = void 0,
-                deferred = $q.defer();
+            var scriptId = void 0;
+            // usedConfiguration = void 0,
 
             return {
                 load: load
@@ -139,7 +195,7 @@
                 return angular.isDefined($window.OT);
             }
 
-            function setScript(options) {
+            function setScript(options, cb) {
                 var script, scriptElem;
                 if (scriptId) {
                     scriptElem = $window.document.getElementById(scriptId);
@@ -148,12 +204,9 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
-                // script.async = true;
+                //TODO add IE-support
                 script.onload = function() {
-                    if (angular.isFunction($window[options.callback])) {
-                        return $window[options.callback]();
-                    }
-                    deferred.resolve($window.OT);
+                    cb();
                 };
                 if (options.transport === 'auto') {
                     script.src = OPENTOK_URL;
@@ -162,32 +215,33 @@
                 }
 
                 // script.src = script.src + '?callback=' + options.callback;
-                return $window.document.body.appendChild(script);
+                $window.document.body.appendChild(script);
             }
 
             function load() {
                 var options = that.options,
-                    randomizedFunctionName;
+                    deferred = $q.defer();
+                // randomizedFunctionName;
                 if (isOTLoaded()) {
                     deferred.resolve($window.OT);
                     return deferred.promise;
                 }
-                randomizedFunctionName = options.callback = 'onOpenTokReady' + Math.round(Math.random() * 1000);
-                $window[randomizedFunctionName] = function() {
-                    $window[randomizedFunctionName] = null;
+                // randomizedFunctionName = options.callback = 'onOpenTokReady' + Math.round(Math.random() * 1000);
+                var callback = function() {
+                    // $window[randomizedFunctionName] = null;
                     deferred.resolve($window.OT);
                 };
-                if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
-                    $window.document.addEventListener('online', function() {
-                        if (!isOTLoaded()) {
-                            return options;
-                        }
-                    });
-                } else {
-                    setScript(options);
-                }
-                usedConfiguration = options;
-                usedConfiguration.randomizedFunctionName = randomizedFunctionName;
+                // TODO:  test with mobile
+                // if ($window.navigator.connection && $window.Connection && $window.navigator.connection.type === $window.Connection.NONE) {
+                //     $window.document.addEventListener('online', function() {
+                //         if (!isOTLoaded()) {
+                //             return options;
+                //         }
+                //     });
+                // } else {
+                setScript(options, callback);
+                // usedConfiguration = options;
+                // usedConfiguration.randomizedFunctionName = randomizedFunctionName;
                 return deferred.promise;
             }
         }
@@ -342,7 +396,7 @@
         .provider('openTokPublisher', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
-        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$injector"];
+        main.$inject = ["$q", "$timeout", "OTApi", "otutil", "$log"];
         var pv = this,
             defaultElem = 'PublisherContainer',
             defaultProp = {
@@ -358,7 +412,7 @@
         }
 
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector) {
+        function main($q, $timeout, OTApi, otutil, $log) {
             var options = pv._options;
             options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
             options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
@@ -377,7 +431,7 @@
              */
 
             function init(targetElement, props) {
-                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $injector, options, targetElement, props);
+                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $log, options, targetElement, props);
             }
 
             /**
@@ -393,13 +447,13 @@
         }
     }
 
-    function OpenTokPublisher(q, timeout, api, utils, injector, options, targetElement, props) {
+    function OpenTokPublisher(q, timeout, api, utils, log, options, targetElement, props) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
         self._api = api;
         self._utils = utils;
-        self._injector = injector;
+        self._log = log;
         self._options = self._utils.paramCheck(options, "obj", {});
 
         self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
@@ -408,6 +462,7 @@
         initPublisher(self._targetElement, self._props);
 
         function initPublisher(elem, props) {
+
             return getApi()
                 .then(completeAction)
                 .catch(standardError);
@@ -491,7 +546,6 @@
         pv.configurePublisher = configurePublisher;
         pv.configureSubscriber = configureSubscriber;
 
-
         function setApiKey(num) {
             angular.extend(pv._options, {
                 apiKey: num
@@ -544,14 +598,19 @@
         self._api = api;
         self._utils = utils;
         self._injector = injector;
+        self._subscriberObject = subscriber
+        self._publisherObject = publisher
         self._log = log;
         self._params = params;
         self._ctx = ctx;
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
-
         self._session = self._utils.paramCheck(self._options.session, 'bool', false);
         self._token = self._utils.paramCheck(self._options.token, 'bool', false);
+
+        if (self._token) {
+            self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
+        }
 
         if (self._session) {
             self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
@@ -567,10 +626,8 @@
             self._getToken = getToken;
         }
 
-        self._publisherObject = publisher
         self._initializePublisher = initializePublisher;
 
-        self._subscriberObject = subscriber
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
@@ -586,7 +643,7 @@
         function initSession(args, ctx) {
             return loadAndGetSessionId(args, ctx)
                 .then(completeAction)
-                .then(returnVal)
+                // .then(returnVal)
                 .catch(standardError);
 
             function completeAction(res) {
@@ -598,11 +655,15 @@
                         self[key] = self._session[key];
                     }
                 }));
+
+                // if(self._autoConnect){
+                //   self._session.
+                // }
             }
 
-            function returnVal() {
-                return self;
-            }
+            // function returnVal() {
+            //     return self._session;
+            // }
 
         }
 
@@ -651,7 +712,6 @@
             return self._publisherObject.init()
                 .then(function(obj) {
                     self._publisher = obj;
-
                     return self._publisher;
                 }).catch(standardError);
         }
@@ -673,7 +733,7 @@
             return self._utils.standardError(err);
         }
 
-        return initSession(self._params, getCTX(self._ctx));
+        initSession(self._params, getCTX(self._ctx));
 
     }
 

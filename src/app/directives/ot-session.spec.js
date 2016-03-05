@@ -8,9 +8,12 @@
             module('ngOpenTok.directives');
             inject(function($compile, $rootScope) {
                 scope = $rootScope.$new()
-								scope.subscribers = ["asas","sdsdc"];
-                scope.sessionId = "Boom!!";
-                elem = angular.element("<x-opentok-session id='sessionId'>''</x-opentok-session>");
+                scope.mySubscribers = [];
+                scope.myPublishers = [];
+                scope.otToken = "myToken";
+                scope.otSessionId = "mySessionId";
+                elem = angular.element("<opentok-session token='otToken' session-id='otSessionId'" +
+                    "subscribers='mySubscribers' publishers='myPublishers'></opentok-session>");
                 $compile(elem)(scope);
                 scope.$digest();
             });
@@ -19,9 +22,9 @@
             scope = null;
             elem = null;
         });
-        it("should be defined", function() {
-            // expect(elem.html()).toEqual("as");
-        });
+        // it("should be defined", function() {
+        //     expect(test).toEqual("myToken");
+        // });
         // describe("Properties", function() {
         //     describe("SessionId", function() {
         //         it("should work", function() {

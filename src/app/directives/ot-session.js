@@ -6,19 +6,29 @@
 
     function openTokSessionDirective() {
 
-			return {
-				restrict: 'AE',
-				scope: {
-					sessionId: '=id',
-					subscribers: '=subscribers',
-					publishers: '=publishers',
-					events: '=events'
-					// connection: '=',
-					// capabilities: '='
-				},
-				template: "<div class='x-opentok-session'></div>"
-			};
+        return {
+            restrict: 'E',
+            scope: {
+                token: '=',
+                sessionId: '=',
+                subscribers: '=',
+                publishers: '=',
+                events: '='
+                    // connection: '=',
+                    // capabilities: '='
+            },
+            template: "<div class='opentok-session'><ng-transclude></ng-transclude></div>",
+            controller: OpenTokSessionController,
+            controllerAs: 'vm',
+            bindToController: true
+        };
 
+        /** @ngInject */
+        function OpenTokSessionController($element) {
+            var vm = this;
+
+
+        }
 
     }
 
