@@ -200,6 +200,7 @@
                 expect(function() {
                     subject;
                 }).not.toThrow()
+                expect(subject()).toBeDefined();
 
             });
             describe("Options", function() {
