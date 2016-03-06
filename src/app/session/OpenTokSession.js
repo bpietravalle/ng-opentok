@@ -53,10 +53,6 @@
         }
     }
 
-    /*
-     * false = default
-     * add setOptions to publisher
-     */
 
     function OpenTokSession(q, timeout, api, utils, injector, subscriber, publisher, log, params, ctx, options) {
         var self = this;
