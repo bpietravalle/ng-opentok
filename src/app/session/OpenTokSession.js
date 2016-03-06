@@ -4,14 +4,12 @@
     angular.module('ngOpenTok.models.session')
         .provider('openTokSession', OpenTokSessionProvider);
 
-    function OpenTokSessionProvider(openTokPublisherProvider, openTokSubscriberProvider) {
+    function OpenTokSessionProvider() {
         var pv = this;
         pv.setApiKey = setApiKey;
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
-        pv.configurePublisher = configurePublisher;
-        pv.configureSubscriber = configureSubscriber;
 
         function setApiKey(num) {
             angular.extend(pv._options, {
@@ -21,14 +19,6 @@
 
         function configure(opts) {
             angular.extend(pv._options, opts);
-        }
-
-        function configureSubscriber(opts) {
-            openTokSubscriberProvider.configure(opts)
-        }
-
-        function configurePublisher(opts) {
-            openTokPublisherProvider.configure(opts)
         }
 
         /** @ngInject */
@@ -106,7 +96,6 @@
         function initSession(args, ctx) {
             return loadAndGetSessionId(args, ctx)
                 .then(completeAction)
-                // .then(returnVal)
                 .catch(standardError);
 
             function completeAction(res) {
@@ -119,14 +108,7 @@
                     }
                 }));
 
-                // if(self._autoConnect){
-                //   self._session.
-                // }
             }
-
-            // function returnVal() {
-            //     return self._session;
-            // }
 
         }
 

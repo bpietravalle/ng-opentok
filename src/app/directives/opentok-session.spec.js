@@ -112,6 +112,15 @@
                 expect(vm.session.once.calls.argsFor(0)[1]).toEqual(handler);
             });
         });
+        describe("Publishers", function() {
+            describe('getSessionId', function() {
+                it("should be defined", function() {
+                    expect(vm.getSessionId()).toEqual("heresTheSessionId");
+                });
+
+            });
+
+        });
 
         // it("
         //                     should be defined ", function() {

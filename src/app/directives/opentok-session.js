@@ -8,6 +8,7 @@
 
         return {
             restrict: 'E',
+            transclude: true,
             scope: {
                 session: '=',
                 streams: '=',
@@ -16,33 +17,24 @@
                 onEvents: '=?',
                 id: '&?',
                 token: '&?'
-
             },
-            template: "<div class='opentok-session-container'></div>",
+            template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
             controllerAs: 'vm',
             bindToController: true
         };
 
-        /* principles: session obj should be initialized before directive
-         * token: should be available sessionId doesn't need to be
-         * ngOpenTok-Session should have method to retrieve token and method for init - like publishers/subscribers
-         * probably don't need pub and sub services?
-         * how handle streams and connections
-         *
-         */
-
-
         /** @ngInject */
         function OpenTokSessionController($q, openTokSession) {
             var vm = this;
+
+            vm.getSessionId = vm.id;
 
             function init() {
                 vm.session = openTokSession(vm.id)
                 return vm.session.connect(vm.token)
                     .then(addEvents)
                     .catch(standardError);
-
             }
 
             function addEvents() {
@@ -57,6 +49,7 @@
             }
 
             init();
+
 
             function standardError(err) {
                 return $q.reject(err);
