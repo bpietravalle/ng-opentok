@@ -1,6 +1,6 @@
 (function() {
     'use strict'
 
-    angular.module('ngOpenTok.directives', ['ngOpenTok.models']);
+    angular.module('ngOpenTok.directives', ['ngOpenTok.models', 'ngOpenTok.utils']);
 
 })();

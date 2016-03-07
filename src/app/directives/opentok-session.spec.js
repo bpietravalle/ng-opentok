@@ -2,11 +2,17 @@
     'use strict';
 
     describe("opentokSession Directive", function() {
-        var rs, handler, sessionSpy, scope, ctrl, elem, vm;
+        var ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
 
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
             module('ngOpenTok.directives', function($provide) {
+                $provide.factory('eventSetter', function($q) {
+                    return jasmine.createSpy('eventSetter').and.callFake(function() {
+                        return $q.when({});
+                    });
+                });
+
                 $provide.factory('openTokSession', function($q) {
                     function promiseWrap(name, obj) {
                         if (!obj) {
@@ -34,8 +40,9 @@
                     };
                 });
             });
-            inject(function($compile, _$rootScope_) {
+            inject(function($compile, _eventSetter_, _$rootScope_) {
                 rs = _$rootScope_;
+                es = _eventSetter_;
                 scope = rs.$new()
                 scope.mySession = {};
                 scope.token = "heresTheToken";
@@ -51,8 +58,8 @@
                 elem = angular.element("<opentok-session token='token' once-events='mySessionOnceEvents' id='mySessionId' session='mySession' on-events='mySessionOnEvents'></opentok-session>");
                 $compile(elem)(scope);
                 scope.$digest();
+                iscope = elem.isolateScope();
                 ctrl = elem.controller('opentokSession');
-                vm = elem.isolateScope().vm
             });
         });
         afterEach(function() {
@@ -67,64 +74,58 @@
                 expect(elem.find('div').attr('class')).toEqual("opentok-session-container")
             });
         });
-        it("should have a controller", function() {
-            expect(ctrl).toBeDefined();
-        });
         describe("Scope", function() {
             it("should have sessionId attr", function() {
-                expect(vm.id).toBeDefined();
-                expect(vm.id()).toEqual("heresTheSessionId");
+                expect(iscope.id).toBeDefined();
+                expect(iscope.id()).toEqual("heresTheSessionId");
             });
             it("should have token object", function() {
-                expect(vm.token).toBeDefined();
-                expect(vm.token()).toEqual("heresTheToken");
+                expect(iscope.token).toBeDefined();
+                expect(iscope.token()).toEqual("heresTheToken");
             });
             it("should have session object", function() {
-                expect(vm.session).toBeDefined();
+                expect(iscope.session).toBeDefined();
             });
             it("should have onEvents object", function() {
-                expect(vm.onEvents).toBeDefined();
+                expect(iscope.onEvents).toBeDefined();
             });
             it("should have onceEvents object", function() {
-                expect(vm.onceEvents).toBeDefined();
+                expect(iscope.onceEvents).toBeDefined();
             });
             // it("should check if 
         });
         describe('initializing session', function() {
             it("should set session object to sessionSpy", function() {
                 rs.$digest();
-                expect(vm.session).toEqual(sessionSpy);
+                expect(iscope.session).toEqual(sessionSpy);
             });
             it("session object should call connect with token", function() {
                 rs.$digest();
-                expect(vm.session.connect).toHaveBeenCalled();
-                var t = vm.session.connect.calls.argsFor(0)[0]();
+                expect(iscope.session.connect).toHaveBeenCalled();
+                var t = iscope.session.connect.calls.argsFor(0)[0]();
                 expect(t).toEqual('heresTheToken');
             });
-            it("shuold call on with scope.onEvents obj", function() {
-                expect(vm.session.on.calls.argsFor(0)[0]).toEqual('event1');
-                expect(vm.session.on.calls.argsFor(0)[1]).toEqual(handler);
-                expect(vm.session.on.calls.argsFor(1)[0]).toEqual('event2');
-                expect(vm.session.on.calls.argsFor(1)[1]).toEqual(handler);
-            });
-            it("should call once with scope.onceEvents properties", function() {
-                expect(vm.session.once.calls.argsFor(0)[0]).toEqual('event3');
-                expect(vm.session.once.calls.argsFor(0)[1]).toEqual(handler);
+            it("should call eventSetter with scope and 'session'", function() {
+                expect(es.calls.argsFor(0)[1]).toEqual('session');
+                expect(es.calls.argsFor(0)[0].token()).toEqual(scope.token);
+                expect(es.calls.argsFor(0)[0].id()).toEqual(scope.mySessionId);
             });
         });
-        describe("Publishers", function() {
-            describe('getSessionId', function() {
-                it("should be defined", function() {
-                    expect(vm.getSessionId()).toEqual("heresTheSessionId");
+        describe("Controller", function() {
+            it("should be defined", function() {
+                expect(ctrl).toBeDefined();
+            });
+            describe("getSession", function() {
+                it("should return session obj", function() {
+                    expect(ctrl.getSession()).toEqual(iscope.session);
                 });
-
             });
 
         });
 
         // it("
         //                     should be defined ", function() {
-        // //     expect(vm).toEqual("
+        // //     expect(iscope).toEqual("
         //                     as ");
         // // });
         // // describe("

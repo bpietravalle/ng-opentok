@@ -4,22 +4,24 @@
     angular.module('ngOpenTok.directives')
         .directive('opentokPublisher', openTokPublisherDirective);
 
-    function openTokPublisherDirective() {
+    /** @ngInject */
+    function openTokPublisherDirective(openTokPublisher, $q, eventSetter) {
 
         return {
+            require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                token: '=',
-                events: '=',
-                targetElementId: '=',
-                targetProperties: '='
+                publisher: '=',
+                onEvents: '=?',
+                onceEvents: '=?',
+                props: '&'
             },
-            template: "<div x-opentok-publisher></div>",
-            controller: OpenTokPublisherController,
-            controllerAs: 'vm',
-            bindToController: true,
-            link: function(scope) {
-                scope
+            template: "<div class='opentok-publisher'></div>",
+            link: function(scope, element) {
+                var props = scope.props() || {};
+                if (angular.isUndefined(scope.publisher)) scope.publisher = {};
+                scope.publisher = openTokPublisher.init(element[0], props);
+                eventSetter(scope, 'publisher');
             }
         };
 

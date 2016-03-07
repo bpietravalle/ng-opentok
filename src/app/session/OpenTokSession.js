@@ -80,7 +80,6 @@
         }
 
         self._initializePublisher = initializePublisher;
-
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
@@ -161,14 +160,10 @@
                 }).catch(standardError);
         }
 
-
         function initializeSubscriber(params) {
             return self._subscriberObject.init(params)
                 .then(function(obj) {
                     self._subscriber = obj;
-                    // if (self._multipleSubscribers) {
-                    //     self._subscribers.init(id, obj);
-                    // }
 
                     return self._subscriber;
                 }).catch(standardError);

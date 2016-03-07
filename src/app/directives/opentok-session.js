@@ -4,7 +4,8 @@
     angular.module('ngOpenTok.directives')
         .directive('opentokSession', openTokSessionDirective);
 
-    function openTokSessionDirective() {
+    /** @ngInject */
+    function openTokSessionDirective($q, openTokSession, eventSetter) {
 
         return {
             restrict: 'E',
@@ -20,43 +21,36 @@
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
-            controllerAs: 'vm',
-            bindToController: true
+            link: function(scope) {
+                scope.session = openTokSession(scope.id)
+                scope.session.connect(scope.token)
+                    .then(function() {
+                        eventSetter(scope, 'session');
+                    }).catch(standardError);
+            }
         };
 
+        function standardError(err) {
+            return $q.reject(err);
+        }
+
         /** @ngInject */
-        function OpenTokSessionController($q, openTokSession) {
+        function OpenTokSessionController($scope) {
             var vm = this;
+            vm.getSession = getSession;
 
-            vm.getSessionId = vm.id;
-
-            function init() {
-                vm.session = openTokSession(vm.id)
-                return vm.session.connect(vm.token)
-                    .then(addEvents)
-                    .catch(standardError);
+            function getSession() {
+                return $scope.session;
             }
 
-            function addEvents() {
-                var types = ['on', 'once'];
-                return $q.all(types.map(function(type) {
-                    var scopeName = type + "Events";
-                    var keys = Object.keys(vm[scopeName]);
-                    $q.all(keys.map(function(key) {
-                        vm.session[type](key, vm[scopeName][key], vm) //using vm as ctx for meow
-                    })).catch(standardError);
-                })).catch(standardError);
-            }
-
-            init();
-
-
-            function standardError(err) {
-                return $q.reject(err);
-            }
-
+            /*
+             * get session;
+             * set session;
+             *
+             */
 
         }
+
 
     }
 

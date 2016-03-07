@@ -63,7 +63,6 @@
         self._utils = utils;
         self._log = log;
         self._options = self._utils.paramCheck(options, "obj", {});
-
         self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
         self._props = self._utils.paramCheck(props, "obj", self._options.targetProperties);
 
@@ -79,11 +78,12 @@
                 var methodsToExtend = ['on', 'once'];
                 self._publisher = res.initPublisher(elem, props)
                 var keys = Object.keys(self._publisher);
+
                 self._q.all(keys.map(function(key) {
                     if (methodsToExtend.indexOf(key) === -1) {
                         self[key] = self._publisher[key];
                     }
-                }));
+                })).catch(standardError);
             }
         }
 

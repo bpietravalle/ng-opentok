@@ -191,7 +191,7 @@
                         test = subject.inspect();
                         expect(test).toEqual(jasmine.objectContaining({
                             _timeout: jasmine.any(Function),
-                            _props: jasmine.any(Object),
+                            // _props: jasmine.any(Object),
                             _options: jasmine.any(Object)
                         }));
                     });

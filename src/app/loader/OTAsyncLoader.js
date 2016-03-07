@@ -21,8 +21,6 @@
         /** @ngInject */
         function main($log, $window, rfc4122, $q, OPENTOK_URL) {
             var scriptId = void 0;
-            // usedConfiguration = void 0,
-
             return {
                 load: load
             }
@@ -40,31 +38,31 @@
                 script = $window.document.createElement('script');
                 script.id = scriptId = "opentok_load_" + (rfc4122.v4());
                 script.type = 'text/javascript';
-                //TODO add IE-support
                 script.onload = function() {
                     cb();
+										//untested
+                    script.onload = null;
                 };
+                // TODO IE fix
+                // if (script.readyState === 'loaded' || script.readyState === 'completed') {
+                //     cb()
+                // }
                 if (options.transport === 'auto') {
                     script.src = OPENTOK_URL;
                 } else {
                     script.src = options.transport + ':' + OPENTOK_URL;
                 }
-
-                // script.src = script.src + '?callback=' + options.callback;
                 $window.document.body.appendChild(script);
             }
 
             function load() {
                 var options = that.options,
                     deferred = $q.defer();
-                // randomizedFunctionName;
                 if (isOTLoaded()) {
                     deferred.resolve($window.OT);
                     return deferred.promise;
                 }
-                // randomizedFunctionName = options.callback = 'onOpenTokReady' + Math.round(Math.random() * 1000);
                 var callback = function() {
-                    // $window[randomizedFunctionName] = null;
                     deferred.resolve($window.OT);
                 };
                 // TODO:  test with mobile
@@ -76,8 +74,6 @@
                 //     });
                 // } else {
                 setScript(options, callback);
-                // usedConfiguration = options;
-                // usedConfiguration.randomizedFunctionName = randomizedFunctionName;
                 return deferred.promise;
             }
         }
