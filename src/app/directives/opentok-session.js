@@ -5,15 +5,15 @@
         .directive('opentokSession', openTokSessionDirective);
 
     /** @ngInject */
-    function openTokSessionDirective($q, openTokSession, capabilitySetter, eventSetter) {
+    function openTokSessionDirective($q, openTokSession, eventSetter) {
 
         return {
             restrict: 'E',
             transclude: true,
             scope: {
                 session: '=',
-                // streams: '=',
-                // connections: '=',
+                streams: '=',
+                publishers: '=',
                 onceEvents: '=?',
                 onEvents: '=?',
                 id: '&?',
@@ -29,13 +29,18 @@
             scope.session.connect(scope.token)
                 .then(function() {
                     eventSetter(scope, 'session');
-                    capabilitySetter(scope)
                 }).catch(standardError);
 
+            scope.$on('$destroy', destroy);
 
-            function standardError(err) {
-                return $q.reject(err);
+            function destroy() {
+                //disconnect
+
             }
+        }
+
+        function standardError(err) {
+            return $q.reject(err);
         }
 
         /** @ngInject */
@@ -44,12 +49,13 @@
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
 
-            // vm.publish = publish;
-            // vm.unpublish = unpublish;
-            // vm.subscribe = subscribe;
-            // vm.unsubscribe = unsubscribe;
-            // vm.forceDisconnect = forceDisconnect;
-            // vm.forceUnpublish = forceUnpublish;
+            vm.publish = publish;
+            vm.unpublish = unpublish;
+            vm.subscribe = subscribe;
+            vm.unsubscribe = unsubscribe;
+            vm.forceDisconnect = forceDisconnect;
+            vm.forceUnpublish = forceUnpublish;
+            vm.remove = remove;
             vm.signal = signal;
 
 
@@ -57,8 +63,51 @@
                 return $scope.session;
             }
 
+            function unpublish(p) {
+                return getSession().unpublish(p);
+            }
+
+            function unsubscribe(s) {
+                return getSession().unsubscribe(s);
+            }
+
+            function forceDisconnect(c) {
+                return getSession().forceDisconnect(c);
+            }
+
+            function forceUnpublish(p) {
+                return getSession().forceUnpublish(p);
+            }
+
+            function publish(p) {
+                return getSession().publish(p)
+                    .then(function(res) {
+                        $scope.publishers.push(res);
+                        return res;
+                    }).catch(standardError);
+            }
+
+
+            function remove(type, obj) {
+                if (type !== 'publishers') {
+                    throw new Error("Invalid type: " + type);
+                }
+                var arr = $scope[type],
+                    idx = arr.indexOf(obj);
+                if (idx === -1) {
+                    throw new Error("Object: " + obj + " not found");
+                }
+
+                arr.splice(idx, 1);
+            }
+
             function signal(data) {
                 return getSession().signal(data);
+            }
+
+            function subscribe(s, t, p) {
+                //should return otsub object
+                return getSession().subscribe(s, t, p);
             }
 
             function getConnection() {

@@ -15,11 +15,11 @@
                 });
 
                 $provide.factory('openTokSession', function($q) {
-                    function promiseWrap(name, obj) {
-                        if (!obj) {
-                            obj = {}
-                        }
-                        return jasmine.createSpy(name).and.callFake(function() {
+                    function promiseWrap(name) {
+                        return jasmine.createSpy(name).and.callFake(function(obj) {
+                            if (!obj) {
+                                obj = {}
+                            }
                             return $q.when(obj);
                         });
                     }
@@ -59,6 +59,7 @@
                 scope = rs.$new()
                 scope.mySession = {};
                 scope.token = "heresTheToken";
+                scope.myPublishers = [];
                 scope.mySessionId = "heresTheSessionId";
                 scope.pcontainer = "heresTheContainer"
                 scope.mySessionOnEvents = {
@@ -68,7 +69,9 @@
                 scope.mySessionOnceEvents = {
                     'event3': handler
                 };
-                elem = angular.element("<opentok-session token='token' once-events='mySessionOnceEvents' id='mySessionId' session='mySession' on-events='mySessionOnEvents'></opentok-session>");
+                elem = angular.element("<opentok-session publishers='myPublishers' " +
+                    "token='token' once-events='mySessionOnceEvents' id='mySessionId' " +
+                    "session='mySession' on-events='mySessionOnEvents'></opentok-session>");
                 $compile(elem)(scope);
                 scope.$digest();
                 iscope = elem.isolateScope();
@@ -151,7 +154,7 @@
                 });
 
             }
-            // ctrlMeths.forEach(testCtrlMeths);
+            ctrlMeths.forEach(testCtrlMeths);
             describe('isLocal', function() {
                 it("should return a boolean", function() {
                     var test = ctrl.isLocal('notLocal');
@@ -160,6 +163,48 @@
                     expect(test).toBeTruthy;
                 });
             });
+            describe('isConnected', function() {
+                it("should return a boolean", function() {
+                    var test = ctrl.isConnected();
+                    expect(test).toBeTruthy;
+                });
+            });
+            describe('publish', function() {
+                it("should add return value to publishers array", function() {
+                    expect(iscope.publishers).toHaveLength(0);
+                    var pubMock = {
+                        publisher: 'obj'
+                    };
+                    ctrl.publish(pubMock);
+                    rs.$digest();
+                    expect(iscope.publishers).toHaveLength(1);
+                    expect(iscope.publishers[0]).toEqual(pubMock);
+                });
+            });
+            describe('remove', function() {
+                it("should throw an error if invalid type", function() {
+                    expect(function() {
+                        ctrl.remove('stuff', {});
+                    }).toThrow();
+                });
+                it("should throw error if obj not found", function() {
+                    iscope.publishers.push('a');
+                    iscope.publishers.push('b');
+                    iscope.publishers.push('c');
+                    expect(function() {
+                        ctrl.remove('publishers', 'd');
+                    }).toThrow();
+                });
+                it("should remove publisher from array", function() {
+                    iscope.publishers.push('a');
+                    iscope.publishers.push('b');
+                    iscope.publishers.push('c');
+                    expect(iscope.publishers).toHaveLength(3);
+                    ctrl.remove('publishers', 'a');
+                    expect(iscope.publishers).toHaveLength(2);
+                });
+            });
+
         });
 
         // it("

@@ -26,6 +26,12 @@
                             pubSpy = {
                                 on: promiseWrap('on'),
                                 once: promiseWrap('once'),
+                                stream: {
+                                    connection: {
+                                        connectionId: 'myId'
+                                    }
+                                },
+
                                 destroy: jasmine.createSpy('destroy')
                             };
 
@@ -45,12 +51,10 @@
                 getSession: function() {
                     return sessionSpy;
                 },
+                remove: jasmine.createSpy('remove'),
                 unpublish: jasmine.createSpy('unpublish'),
-                isConnected: function() {
-                    return true
-                }
+                isLocal: function() {}
             };
-
             scope.targetProperties = {
                 height: 300,
                 width: 400
@@ -59,17 +63,14 @@
             scope.myEvents1 = {};
             scope.myEvents2 = {};
             elem = angular.element("<opentok-session><opentok-publisher onEvents='myEvents1' " +
-                "onceEvents='myEvents2' props='targetProperties' publisher='myPublisher'></opentok-publisher></opentok-session>")
+                "onceEvents='myEvents2' props='targetProperties' publisher='myPublisher'></opentok-publisher></opentok-session>");
             elem.data({
                 '$opentokSessionController': sessionCtrl
             });
             compiledElem(elem, scope);
         });
 
-        function compiledElem(e, s, f) {
-            if (f) sessionCtrl.isConnected = function() {
-                false
-            }
+        function compiledElem(e, s) {
             $compile(e)(s);
             s.$digest();
             return e;
@@ -100,10 +101,37 @@
         });
         describe('Scope Events', function() {
             describe('On destroy', function() {
-                describe('when connected', function() {
-                    it('should call unpublisher', function() {
-                      
-
+                describe('when local', function() {
+                    beforeEach(function() {
+                        spyOn(sessionCtrl, 'isLocal').and.returnValue(true);
+                        elem = compiledElem(elem, scope);
+                        scope.$broadcast('$destroy');
+                        rs.$digest();
+                    });
+                    it('should call ctrl.unpublish', function() {
+                        expect(sessionCtrl.unpublish).toHaveBeenCalledWith(pubSpy);
+                    });
+                    it('should not call publisher.destroy', function() {
+                        expect(pubSpy.destroy).not.toHaveBeenCalled();
+                    });
+                });
+                describe('when not local', function() {
+                    beforeEach(function() {
+                        spyOn(sessionCtrl, 'isLocal').and.returnValue(false);
+                        elem = compiledElem(elem, scope);
+                        scope.$broadcast('$destroy');
+                        rs.$digest();
+                    });
+                    it('should not call ctrl.unpublisher', function() {
+                        expect(sessionCtrl.unpublish).not.toHaveBeenCalled();
+                    });
+                    it('should call publisher.destroy', function() {
+                        expect(pubSpy.destroy).toHaveBeenCalled();
+                    });
+                    it('should call ctrl.remove', function() {
+                        var ctrl = sessionCtrl;
+                        expect(ctrl.remove.calls.argsFor(0)[0]).toEqual('publishers');
+                        expect(ctrl.remove.calls.argsFor(0)[1]).toEqual(pubSpy);
                     });
                 });
             });

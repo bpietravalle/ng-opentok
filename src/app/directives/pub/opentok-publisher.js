@@ -19,14 +19,19 @@
             template: "<div class='opentok-publisher'></div>",
             link: function(scope, element, a, ctrl) {
                 var props = scope.props() || {};
-                if (angular.isUndefined(scope.publisher)) scope.publisher = {};
                 scope.publisher = openTokPublisher.init(element[0], props);
                 eventSetter(scope, 'publisher');
-                // scope.$on('$destroy', destroy);
-                // function destroy() {
-                //     if (ctrl.isConnected) ctrl.unpublish(scope.publisher);
-                //     else scope.publisher.destroy();
-                // }
+                scope.$on('$destroy', destroy);
+
+                function destroy() {
+                    var str = scope.publisher.stream.connection.connectionId;
+                    if (ctrl.isLocal(str)) {
+                        ctrl.unpublish(scope.publisher);
+                    } else {
+                        scope.publisher.destroy();
+                        ctrl.remove('publishers', scope.publisher);
+                    }
+                }
 
             }
         };

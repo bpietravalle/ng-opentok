@@ -5,6 +5,7 @@
     function eventSetterFactory($q) {
 			//TODO check SDK - some events don't return an obj and will fail
 			//see otutils
+			//this wont work for subscribers bc on,once are cbs
 
         return function(scope, prop) {
             var types = ['on', 'once'];
