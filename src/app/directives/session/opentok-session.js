@@ -5,19 +5,19 @@
         .directive('opentokSession', OpenTokSessionDirective);
 
     /** @ngInject */
-    function OpenTokSessionDirective($q, otSessionModel, eventSetter) {
+    function OpenTokSessionDirective($q, $log, otSessionModel, eventSetter) {
 
         return {
             restrict: 'E',
             transclude: true,
             scope: {
                 session: '=',
-                streams: '=',
-                publishers: '=',
+                streams: '=?',
+                publishers: '=?',
                 onceEvents: '=?',
                 onEvents: '=?',
-                id: '&?',
-                token: '&?'
+                id: '=?',
+                token: '='
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
@@ -25,9 +25,15 @@
         };
 
         function linkFn(scope) {
-            scope.session = otSessionModel(scope.id)
-            scope.session.connect(scope.token)
-                .then(function() {
+            // scope.session = otSessionModel(scope.id)
+            if (!scope.publishers) scope.publishers = {};
+            if (!scope.streams) scope.streams = {};
+
+            otSessionModel(scope.id)
+                .then(function(res) {
+                    scope.session = res;
+                    scope.session.connect(scope.token)
+                }).then(function() {
                     eventSetter(scope, 'session');
                 }).catch(standardError);
 

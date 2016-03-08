@@ -48,10 +48,14 @@
                 scope = rs.$new()
             });
             sessionCtrl = {
+                isConnected: function() {
+                    return true
+                },
                 getSession: function() {
                     return sessionSpy;
                 },
                 remove: jasmine.createSpy('remove'),
+                publish: jasmine.createSpy('publish'),
                 unpublish: jasmine.createSpy('unpublish'),
                 isLocal: function() {}
             };
@@ -88,15 +92,10 @@
         describe("Initialization", function() {
             it("should call init on publisher with element and properties object", function() {
                 expect(ot.init.calls.argsFor(0)[0].localName).toEqual("opentok-publisher");
-                expect(ot.init.calls.argsFor(0)[1]).toEqual({
-                    height: 300,
-                    width: 400
-                });
             });
             it("should call 'eventSetter' with scope and 'publisher'", function() {
                 expect(es.calls.argsFor(0)[1]).toEqual('publisher');
                 expect(es.calls.argsFor(0)[0].publisher).toEqual(pubSpy);
-                expect(es.calls.argsFor(0)[0].props()).toEqual(scope.targetProperties);
             });
         });
         describe('Scope Events', function() {

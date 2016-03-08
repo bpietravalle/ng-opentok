@@ -63,7 +63,11 @@
         self._utils = utils;
         self._log = log;
         self._options = self._utils.paramCheck(options, "obj", {});
-        self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
+        if (angular.isString(targetElement)) {
+            self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
+        } else {
+            self._targetElement = self._utils.paramCheck(targetElement, "obj", self._options.targetElement);
+        }
         self._props = self._utils.paramCheck(props, "obj", self._options.targetProperties);
 
         initPublisher(self._targetElement, self._props);

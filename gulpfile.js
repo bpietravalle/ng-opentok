@@ -20,6 +20,21 @@ wrench.readdirSyncRecursive('./gulp').filter(function(file) {
     require('./gulp/' + file);
 });
 
+function isOnlyChange(event) {
+    return event.type === 'changed';
+}
+
+gulp.task('concat-watch', ['concat'], function() {
+
+    gulp.watch(
+        ['./src/app/**/*.js', '!./src/app/**/*.spec.js'],
+        function(event) {
+            if (isOnlyChange(event)) {
+                gulp.start('concat');
+            }
+        });
+});
+
 gulp.task('concat', function() {
     return gulp.src([
             "./src/app/**/*.module.js", "./src/app/**/*.js",

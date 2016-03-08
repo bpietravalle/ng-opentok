@@ -89,15 +89,10 @@
             it("should call init on subscriber with element and properties object", function() {
                 var ctrl = sessionCtrl;
                 expect(ctrl.subscribe.calls.argsFor(0)[1].localName).toEqual("opentok-subscriber");
-                expect(ctrl.subscribe.calls.argsFor(0)[2]).toEqual({
-                    height: 300,
-                    width: 400
-                });
             });
             it("should call 'eventSetter' with scope and 'subscriber'", function() {
                 expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
                 expect(es.calls.argsFor(0)[0].subscriber).toEqual(subSpy);
-                expect(es.calls.argsFor(0)[0].props()).toEqual(scope.targetProperties);
             });
         });
         describe('Scope Events', function() {

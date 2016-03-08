@@ -118,7 +118,10 @@
 
             function tokenAndSessionTest(y) {
                 it(y + " should not be defined", function() {
-                    expect(subject().inspect(y)).not.toBeDefined();
+                    subject().then(function(res) {
+                        expect(res.inspect(y)).not.toBeDefined();
+                    });
+                    rs.$digest();
                 });
             }
             tsMeths.forEach(tokenAndSessionTest);
@@ -141,13 +144,14 @@
             });
             describe('connect', function() {
                 var spy;
-                beforeEach(function() {
-                    subject = subject();
+                beforeEach(function(done) {
+                    subject().then(function(res) {
+                        spy = res.inspect('session');
+                        test = res.connect("token", "notPassedCTX");
+                    });
                     to.flush();
                     rs.$digest();
-                    spy = subject.inspect('session');
-                    test = subject.connect("token", "notPassedCTX");
-                    rs.$digest();
+                    done();
                 });
                 it("should pass token to session.connect", function() {
                     expect(spy.connect).toHaveBeenCalledWith('token', jasmine.any(Function));
@@ -237,15 +241,15 @@
 
             });
             describe("Options", function() {
-                beforeEach(function() {
-                    subject = subject();
-                    to.flush();
-                    rs.$digest();
-                });
 
                 function defaultValues(y) {
                     it("should have a default for " + y[0] + " of: " + y[1], function() {
-                        expect(subject.inspect(y[0])).toEqual(y[1]);
+                        subject().then(function(res) {
+                            expect(res.inspect(y[0])).toEqual(y[1]);
+                        });
+                        to.flush();
+                        rs.$digest();
+
                     });
                 }
 
@@ -262,10 +266,13 @@
             });
             describe("inspect", function() {
                 var test;
-                beforeEach(function() {
-                    subject = subject();
+                beforeEach(function(done) {
+                    subject().then(function(res) {
+                        subject = res;
+                    })
                     to.flush();
                     rs.$digest();
+                    done();
                 });
                 describe("without arguments", function() {
                     it("should return the 'self' object", function() {
@@ -293,7 +300,6 @@
                     describe("When args is undefined", function() {
                         beforeEach(function() {
                             test = subject(undefined, ctx);
-                            to.flush();
                         });
                         it("should not throw an error", function() {
                             expect(function() {
@@ -338,10 +344,13 @@
             });
             describe("properties", function() {
                 var test;
-                beforeEach(function() {
-                    test = subject();
+                beforeEach(function(done) {
+                    subject().then(function(res) {
+                        test = res;
+                    });
                     to.flush();
                     rs.$digest();
+                    done();
                 });
                 it("should have connection prop", function() {
                     expect(test.connection).toEqual({});
@@ -351,15 +360,6 @@
                 });
                 it("should have capabilities prop", function() {
                     expect(test.capabilities).toEqual("asdf");
-                });
-                describe('return value', function() {
-                    it("should be an obj", function() {
-                        expect(subject()).toBeAn('object');
-                    });
-                    it("should not be a promise", function() {
-                        expect(subject()).not.toBeAPromise();
-                    });
-
                 });
             });
             describe("Queries", function() {
@@ -376,8 +376,10 @@
                 function testQueries(y) {
                     describe(y[0], function() {
                         var fn, spy, utils;
-                        beforeEach(function() {
-                            subject = subject();
+                        beforeEach(function(done) {
+                            subject().then(function(res) {
+                                subject = res;
+                            });
                             to.flush();
                             rs.$digest();
                             utils = subject.inspect('utils');
@@ -386,6 +388,7 @@
                             rs.$digest();
                             spy = subject.inspect('session');
                             fn = jasmine.any(Function);
+                            done();
                         });
                         it("should pass params to OT api", function() {
                             expect(spy[y[0]].calls.argsFor(0)[0]).toEqual(y[1][0]);
@@ -424,14 +427,17 @@
                 function testCommands(y) {
                     describe(y[0], function() {
                         var fn, spy;
-                        beforeEach(function() {
-                            subject = subject();
+                        beforeEach(function(done) {
+                            subject().then(function(res) {
+                                subject = res;
+                            });
                             to.flush();
                             rs.$digest();
                             subject[y[0]].apply(subject, y[1]);
                             rs.$digest();
                             spy = subject.inspect('session');
                             fn = jasmine.any(Function);
+                            done();
                         });
                         it("should pass param to OT api", function() {
                             y[1].push(fn);
@@ -442,12 +448,15 @@
                 commands.forEach(testCommands);
                 describe("Subscribe", function() {
                     var spy, streamSpy;
-                    beforeEach(function() {
-                        subject = subject();
+                    beforeEach(function(done) {
+                        subject().then(function(res) {
+                            subject = res;
+                        });
                         to.flush();
                         rs.$digest();
                         streamSpy = jasmine.createSpy('streamSpy');
                         spy = subject.inspect('session');
+                        done();
                     });
                     it("should throw error if stream obj is undefined", function() {
                         expect(function() {
@@ -500,8 +509,10 @@
                 });
                 describe('connect', function() {
                     var tokenObj, sessionObj;
-                    beforeEach(function() {
-                        subject = subject();
+                    beforeEach(function(done) {
+                        subject().then(function(res) {
+                            subject = res;
+                        });
                         to.flush();
                         rs.$digest();
                         sessionObj = subject.inspect('session');
@@ -511,6 +522,7 @@
                         });
                         to.flush();
                         rs.$digest();
+                        done();
                     });
                     it("should pass args to tokenService.getToken", function() {
                         expect(tokenObj.getToken).toHaveBeenCalledWith('token');
@@ -521,11 +533,14 @@
                 });
                 describe("Publish", function() {
                     var spy;
-                    beforeEach(function() {
-                        subject = subject();
+                    beforeEach(function(done) {
+                        subject().then(function(res) {
+                            subject = res;
+                        });
                         to.flush();
                         rs.$digest();
                         spy = subject.inspect('session');
+                        done();
                     });
                     describe("When passing an object", function() {
                         it("should pass object to session.publish", function() {

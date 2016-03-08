@@ -13,15 +13,14 @@
             scope: {
                 stream: '=',
                 onEvents: '=?',
-                onceEvents: '=?',
-                props: '&'
+                onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
                 var stream = scope.stream;
-                var props = scope.props() || {};
-                scope.subscriber = ctrl.subscribe(stream, element[0], props);
-                //have to extend on,once
+                if (ctrl.isConnected()) {
+                    scope.subscriber = ctrl.subscribe(stream, element[0]);
+                }
                 eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);
 

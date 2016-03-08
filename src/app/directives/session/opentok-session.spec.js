@@ -49,7 +49,7 @@
                             forceUnpublish: promiseWrap('forceUnpublish'),
                             forceDisconnect: promiseWrap('forceDisconnect')
                         };
-                        return sessionSpy;
+                        return $q.when(sessionSpy);
                     };
                 });
             });
@@ -94,11 +94,11 @@
         describe("Scope", function() {
             it("should have sessionId attr", function() {
                 expect(iscope.id).toBeDefined();
-                expect(iscope.id()).toEqual("heresTheSessionId");
+                expect(iscope.id).toEqual("heresTheSessionId");
             });
             it("should have token object", function() {
                 expect(iscope.token).toBeDefined();
-                expect(iscope.token()).toEqual("heresTheToken");
+                expect(iscope.token).toEqual("heresTheToken");
             });
             it("should have session object", function() {
                 expect(iscope.session).toBeDefined();
@@ -119,13 +119,13 @@
             it("session object should call connect with token", function() {
                 rs.$digest();
                 expect(iscope.session.connect).toHaveBeenCalled();
-                var t = iscope.session.connect.calls.argsFor(0)[0]();
+                var t = iscope.session.connect.calls.argsFor(0)[0];
                 expect(t).toEqual('heresTheToken');
             });
             it("should call eventSetter with scope and 'session'", function() {
                 expect(es.calls.argsFor(0)[1]).toEqual('session');
-                expect(es.calls.argsFor(0)[0].token()).toEqual(scope.token);
-                expect(es.calls.argsFor(0)[0].id()).toEqual(scope.mySessionId);
+                expect(es.calls.argsFor(0)[0].token).toEqual(scope.token);
+                expect(es.calls.argsFor(0)[0].id).toEqual(scope.mySessionId);
             });
         });
         describe("Controller", function() {

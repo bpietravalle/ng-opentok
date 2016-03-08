@@ -13,13 +13,12 @@
             scope: {
                 publisher: '=',
                 onEvents: '=?',
-                onceEvents: '=?',
-                props: '&'
+                onceEvents: '=?'
             },
             template: "<div class='opentok-publisher'></div>",
             link: function(scope, element, a, ctrl) {
-                var props = scope.props() || {};
-                scope.publisher = otPublisherModel.init(element[0], props);
+                scope.publisher = otPublisherModel.init(element[0]);
+                if (ctrl.isConnected()) ctrl.publish(scope.publisher);
                 eventSetter(scope, 'publisher');
                 scope.$on('$destroy', destroy);
 

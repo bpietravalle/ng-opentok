@@ -71,14 +71,14 @@
         self._ctx = ctx;
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
-        self._session = self._utils.paramCheck(self._options.session, 'bool', false);
+        self._sessionId = self._utils.paramCheck(self._options.session, 'bool', false);
         self._token = self._utils.paramCheck(self._options.token, 'bool', false);
 
         // if (self._token) {
         //     self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
         // }
 
-        if (self._session) {
+        if (self._sessionId) {
             self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
             self._sessionIdMethod = self._utils.paramCheck(self._options.sessionIdMethod, "str", "getSessionId");
             self._sessionObject = self._injector.get(self._sessionService);
@@ -120,6 +120,7 @@
                     }
                 }));
 
+                return self;
             }
 
         }
@@ -129,7 +130,7 @@
         }
 
         function getSessionId(args, ctx) {
-            if (self._session) {
+            if (self._sessionId) {
                 args = arrayCheck(args);
                 return self._timeout(function() {
                     return self._sessionObject[self._sessionIdMethod].apply(ctx, args);
@@ -186,7 +187,7 @@
             return self._utils.standardError(err);
         }
 
-        initSession(self._params, getCTX(self._ctx));
+        return initSession(self._params, getCTX(self._ctx));
 
     }
 
@@ -217,6 +218,7 @@
         return submitToken(str);
 
         function submitToken(val) {
+          self._log.info(self._session);
             return self._utils.handler(function(cb) {
                     self._session.connect(val, cb);
                 })
