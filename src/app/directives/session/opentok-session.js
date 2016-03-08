@@ -25,9 +25,8 @@
         };
 
         function linkFn(scope) {
-            // scope.session = otSessionModel(scope.id)
-            if (!scope.publishers) scope.publishers = {};
-            if (!scope.streams) scope.streams = {};
+            if (!scope.publishers) scope.publishers = [];
+            if (!scope.streams) scope.streams = [];
 
             otSessionModel(scope.id)
                 .then(function(res) {
@@ -100,11 +99,10 @@
                 }
                 var arr = $scope[type],
                     idx = arr.indexOf(obj);
-                if (idx === -1) {
-                    throw new Error("Object: " + obj + " not found");
+                if (idx !== -1) {
+                    arr.splice(idx, 1);
                 }
-
-                arr.splice(idx, 1);
+                $log.info("Object: " + obj + " not found in publishers array");
             }
 
             function signal(data) {

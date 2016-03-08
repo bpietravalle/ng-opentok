@@ -42,6 +42,13 @@
 
 (function() {
     'use strict'
+    angular.module('ngOpenTok.directives.publisher', ['ngOpenTok.models.publisher', 'ngOpenTok.utils'])
+
+
+})();
+
+(function() {
+    'use strict'
     angular.module('ngOpenTok.directives.session', ['ngOpenTok.models.session', 'ngOpenTok.utils'])
 
 
@@ -50,13 +57,6 @@
 (function() {
     'use strict'
     angular.module('ngOpenTok.directives.subscriber', ['ngOpenTok.models.subscriber', 'ngOpenTok.utils'])
-
-
-})();
-
-(function() {
-    'use strict'
-    angular.module('ngOpenTok.directives.publisher', ['ngOpenTok.models.publisher', 'ngOpenTok.utils'])
 
 
 })();
@@ -467,6 +467,81 @@
 (function() {
     'use strict';
 
+    OpenTokPublisherDirective.$inject = ["otPublisherModel", "$q", "eventSetter"];
+    angular.module('ngOpenTok.directives.publisher')
+        .directive('opentokPublisher', OpenTokPublisherDirective);
+
+    /** @ngInject */
+    function OpenTokPublisherDirective(otPublisherModel, $q, eventSetter) {
+
+        return {
+            require: '?^^opentokSession',
+            restrict: 'E',
+            scope: {
+                publisher: '=',
+                onEvents: '=?',
+                onceEvents: '=?'
+            },
+            template: "<div class='opentok-publisher'></div>",
+            link: function(scope, element, a, ctrl) {
+                scope.publisher = otPublisherModel.init(element[0]);
+                if (ctrl.isConnected()) ctrl.publish(scope.publisher);
+                eventSetter(scope, 'publisher');
+                scope.$on('$destroy', destroy);
+
+                function destroy() {
+                    if (scope.publisher.stream) {
+                        ctrl.unpublish(scope.publisher);
+                    } else {
+                        scope.publisher.destroy();
+                        ctrl.remove('publishers', scope.publisher);
+                    }
+                    //scope.publisher = null - put in session
+                }
+
+            }
+        };
+
+        /** @ngInject */
+        // function OpenTokPublisherController() {
+        //     var vm = this;
+        //     vm
+
+        // }
+
+    }
+
+})();
+
+// (function() {
+//     'use strict';
+
+//     angular.module('ngOpenTok.directives')
+//         .factory('otpLinkFn', publisherLinkFn);
+
+//     /** @ngInject */
+//     function publisherLinkFn(eventSetter, openTokPublisher) {
+
+//         return function(scope, element, a, ctrl) {
+//             var props = scope.props() || {};
+//             if (angular.isUndefined(scope.publisher)) scope.publisher = {};
+//             scope.publisher = openTokPublisher.init(element[0], props);
+//             eventSetter(scope, 'publisher');
+
+//             scope.$on('$destroy', function() {
+//                 // if (ctrl) ctrl.unpublish(scope.publisher);
+//                 // else scope.publisher.destroy();
+//             });
+
+//         };
+
+//     }
+
+// })();
+
+(function() {
+    'use strict';
+
     OpenTokSessionDirective.$inject = ["$q", "$log", "otSessionModel", "eventSetter"];
     angular.module('ngOpenTok.directives.session')
         .directive('opentokSession', OpenTokSessionDirective);
@@ -493,9 +568,8 @@
         };
 
         function linkFn(scope) {
-            // scope.session = otSessionModel(scope.id)
-            if (!scope.publishers) scope.publishers = {};
-            if (!scope.streams) scope.streams = {};
+            if (!scope.publishers) scope.publishers = [];
+            if (!scope.streams) scope.streams = [];
 
             otSessionModel(scope.id)
                 .then(function(res) {
@@ -568,11 +642,10 @@
                 }
                 var arr = $scope[type],
                     idx = arr.indexOf(obj);
-                if (idx === -1) {
-                    throw new Error("Object: " + obj + " not found");
+                if (idx !== -1) {
+                    arr.splice(idx, 1);
                 }
-
-                arr.splice(idx, 1);
+                $log.info("Object: " + obj + " not found in publishers array");
             }
 
             function signal(data) {
@@ -616,16 +689,16 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                stream: '=',
+                streams: '=',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
                 var stream = scope.stream;
-                if (ctrl.isConnected()) {
-                    scope.subscriber = ctrl.subscribe(stream, element[0]);
-                }
+                // if (ctrl.isConnected()) {
+                scope.subscriber = ctrl.subscribe(stream, element[0]);
+                // }
                 eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);
 
@@ -646,82 +719,6 @@
     }
 
 })();
-
-(function() {
-    'use strict';
-
-    OpenTokPublisherDirective.$inject = ["otPublisherModel", "$q", "eventSetter"];
-    angular.module('ngOpenTok.directives.publisher')
-        .directive('opentokPublisher', OpenTokPublisherDirective);
-
-    /** @ngInject */
-    function OpenTokPublisherDirective(otPublisherModel, $q, eventSetter) {
-
-        return {
-            require: '?^^opentokSession',
-            restrict: 'E',
-            scope: {
-                publisher: '=',
-                onEvents: '=?',
-                onceEvents: '=?'
-            },
-            template: "<div class='opentok-publisher'></div>",
-            link: function(scope, element, a, ctrl) {
-                scope.publisher = otPublisherModel.init(element[0]);
-                if (ctrl.isConnected()) ctrl.publish(scope.publisher);
-                eventSetter(scope, 'publisher');
-                scope.$on('$destroy', destroy);
-
-                function destroy() {
-                    var str = scope.publisher.stream.connection.connectionId;
-                    if (ctrl.isLocal(str)) {
-                        ctrl.unpublish(scope.publisher);
-                    } else {
-                        scope.publisher.destroy();
-                        ctrl.remove('publishers', scope.publisher);
-                    }
-                    //scope.publisher = null - put in session
-                }
-
-            }
-        };
-
-        /** @ngInject */
-        // function OpenTokPublisherController() {
-        //     var vm = this;
-        //     vm
-
-        // }
-
-    }
-
-})();
-
-// (function() {
-//     'use strict';
-
-//     angular.module('ngOpenTok.directives')
-//         .factory('otpLinkFn', publisherLinkFn);
-
-//     /** @ngInject */
-//     function publisherLinkFn(eventSetter, openTokPublisher) {
-
-//         return function(scope, element, a, ctrl) {
-//             var props = scope.props() || {};
-//             if (angular.isUndefined(scope.publisher)) scope.publisher = {};
-//             scope.publisher = openTokPublisher.init(element[0], props);
-//             eventSetter(scope, 'publisher');
-
-//             scope.$on('$destroy', function() {
-//                 // if (ctrl) ctrl.unpublish(scope.publisher);
-//                 // else scope.publisher.destroy();
-//             });
-
-//         };
-
-//     }
-
-// })();
 
 (function() {
     'use strict';

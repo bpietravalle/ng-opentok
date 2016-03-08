@@ -23,8 +23,7 @@
                 scope.$on('$destroy', destroy);
 
                 function destroy() {
-                    var str = scope.publisher.stream.connection.connectionId;
-                    if (ctrl.isLocal(str)) {
+                    if (scope.publisher.stream) {
                         ctrl.unpublish(scope.publisher);
                     } else {
                         scope.publisher.destroy();

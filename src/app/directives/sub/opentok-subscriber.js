@@ -11,16 +11,16 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                stream: '=',
+                streams: '=',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
                 var stream = scope.stream;
-                if (ctrl.isConnected()) {
-                    scope.subscriber = ctrl.subscribe(stream, element[0]);
-                }
+                // if (ctrl.isConnected()) {
+                scope.subscriber = ctrl.subscribe(stream, element[0]);
+                // }
                 eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);
 
