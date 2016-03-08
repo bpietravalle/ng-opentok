@@ -12,7 +12,7 @@
                     });
                 });
 
-                $provide.factory('openTokSubscriber', function($q) {
+                $provide.factory('otSubscriberModel', function($q) {
                     function promiseWrap(name, obj) {
                         if (!obj) {
                             obj = {}

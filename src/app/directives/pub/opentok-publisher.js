@@ -1,11 +1,11 @@
 (function() {
     'use strict';
 
-    angular.module('ngOpenTok.directives.publisher', ['ngOpenTok.models.publisher', 'ngOpenTok.utils'])
-        .directive('opentokPublisher', openTokPublisherDirective);
+    angular.module('ngOpenTok.directives.publisher')
+        .directive('opentokPublisher', OpenTokPublisherDirective);
 
     /** @ngInject */
-    function openTokPublisherDirective(openTokPublisher, $q, eventSetter) {
+    function OpenTokPublisherDirective(otPublisherModel, $q, eventSetter) {
 
         return {
             require: '?^^opentokSession',
@@ -19,7 +19,7 @@
             template: "<div class='opentok-publisher'></div>",
             link: function(scope, element, a, ctrl) {
                 var props = scope.props() || {};
-                scope.publisher = openTokPublisher.init(element[0], props);
+                scope.publisher = otPublisherModel.init(element[0], props);
                 eventSetter(scope, 'publisher');
                 scope.$on('$destroy', destroy);
 
@@ -31,6 +31,7 @@
                         scope.publisher.destroy();
                         ctrl.remove('publishers', scope.publisher);
                     }
+                    //scope.publisher = null - put in session
                 }
 
             }

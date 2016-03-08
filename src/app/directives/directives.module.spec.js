@@ -19,9 +19,14 @@
             beforeEach(function() {
                 deps = module.value('ngOpenTok.directives').requires;
             });
-            it("should depend on ngOpenTok.models", function() {
-                expect(hasModule("ngOpenTok.models")).toBeTruthy();
-            });
+            var mods = ['subscriber', 'publisher', 'session'];
+
+            function modTest(y) {
+                it("should depend on ngOpenTok.directives." + y, function() {
+                    expect(hasModule("ngOpenTok.directives." + y)).toBeTruthy();
+                });
+            }
+            mods.forEach(modTest);
         });
 
     });

@@ -2,27 +2,40 @@
     'use strict';
 
     angular.module('ngOpenTok.models.session')
-        .provider('openTokSession', OpenTokSessionProvider);
+        .provider('otSessionModel', OpenTokSessionProvider);
 
-    function OpenTokSessionProvider() {
+    function OpenTokSessionProvider(otSubscriberModelProvider, otPublisherModelProvider) {
         var pv = this;
-        pv.setApiKey = setApiKey;
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
 
-        function setApiKey(num) {
-            angular.extend(pv._options, {
-                apiKey: num
-            });
-        }
+				/**
+				 * @param{Object} opts
+				 * @param{Number} opts.apiKey - required
+				 * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
+				 * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
+				 * other options see below
+				 */
 
         function configure(opts) {
             angular.extend(pv._options, opts);
+            if (checkOptions('publisher')) {
+                otPublisherModelProvider.configure(pv._options['publisher']);
+            }
+            if (checkOptions('subscriber')) {
+                otSubscriberModelProvider.configure(pv._options['subscriber']);
+            }
         }
 
+        function checkOptions(key) {
+            var keys = Object.keys(pv._options)
+            return keys.indexOf(key) !== -1;
+        }
+
+
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector, openTokSubscriber, openTokPublisher, $log) {
+        function main($q, $timeout, OTApi, otutil, $injector, otSubscriberModel, otPublisherModel, $log) {
             /**
              * @constructor
              * @param{Array|String} paramsOrSessionId if you set session: true in config phase then
@@ -38,7 +51,7 @@
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
 
-                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, openTokSubscriber, openTokPublisher, $log, paramsOrSessionId, ctx, options);
+                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, otSubscriberModel, otPublisherModel, $log, paramsOrSessionId, ctx, options);
             }
         }
     }
@@ -61,9 +74,9 @@
         self._session = self._utils.paramCheck(self._options.session, 'bool', false);
         self._token = self._utils.paramCheck(self._options.token, 'bool', false);
 
-        if (self._token) {
-            self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
-        }
+        // if (self._token) {
+        //     self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
+        // }
 
         if (self._session) {
             self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");

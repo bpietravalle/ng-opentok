@@ -6,7 +6,7 @@
 
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
-            module('ngOpenTok.directives', function($provide) {
+            module('ngOpenTok.directives.session', function($provide) {
                 $provide.value('OTAsyncLoader', {});
                 $provide.factory('eventSetter', function($q) {
                     return jasmine.createSpy('eventSetter').and.callFake(function() {
@@ -14,7 +14,7 @@
                     });
                 });
 
-                $provide.factory('openTokSession', function($q) {
+                $provide.factory('otSessionModel', function($q) {
                     function promiseWrap(name) {
                         return jasmine.createSpy(name).and.callFake(function(obj) {
                             if (!obj) {

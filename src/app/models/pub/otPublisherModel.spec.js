@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    describe('openTokPublisher', function() {
+    describe('otPublisherModel', function() {
         var subject, rs, ApiSpy;
         beforeEach(function() {
             ApiSpy = {
@@ -29,8 +29,8 @@
             describe("With Defaults", function() {
                 beforeEach(function() {
                     module('ngOpenTok.models.publisher');
-                    inject(function(_openTokPublisher_) {
-                        subject = _openTokPublisher_.getOptions()
+                    inject(function(_otPublisherModel_) {
+                        subject = _otPublisherModel_.getOptions()
                     });
                 });
                 afterEach(function() {
@@ -47,8 +47,8 @@
             });
             describe("With Configured", function() {
                 beforeEach(function() {
-                    module('ngOpenTok.models.publisher', function(openTokPublisherProvider) {
-                        openTokPublisherProvider.configure({
+                    module('ngOpenTok.models.publisher', function(otPublisherModelProvider) {
+                        otPublisherModelProvider.configure({
                             targetElement: "different",
                             targetProperties: {
                                 height: 500,
@@ -56,8 +56,8 @@
                             }
                         });
 
-                        inject(function(_openTokPublisher_) {
-                            subject = _openTokPublisher_.getOptions()
+                        inject(function(_otPublisherModel_) {
+                            subject = _otPublisherModel_.getOptions()
                         });
                     });
                     afterEach(function() {
@@ -76,19 +76,19 @@
 
         describe("Configured Setup - in module's config phase", function() {
             beforeEach(function() {
-                module('ngOpenTok.models.publisher', function($provide, openTokPublisherProvider) {
+                module('ngOpenTok.models.publisher', function($provide, otPublisherModelProvider) {
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
-                    openTokPublisherProvider.configure({
+                    otPublisherModelProvider.configure({
                         targetElement: "different",
                         targetProperties: {
                             different: "props"
                         }
                     });
                 });
-                inject(function(_$rootScope_, _openTokPublisher_) {
-                    subject = _openTokPublisher_;
+                inject(function(_$rootScope_, _otPublisherModel_) {
+                    subject = _otPublisherModel_;
                     rs = _$rootScope_;
                 });
             });
@@ -146,8 +146,8 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_$rootScope_, _openTokPublisher_) {
-                    subject = _openTokPublisher_;
+                inject(function(_$rootScope_, _otPublisherModel_) {
+                    subject = _otPublisherModel_;
                     rs = _$rootScope_;
                 });
             });
@@ -171,9 +171,9 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_openTokPublisher_, _$rootScope_) {
+                inject(function(_otPublisherModel_, _$rootScope_) {
                     rs = _$rootScope_;
-                    subject = _openTokPublisher_.init();
+                    subject = _otPublisherModel_.init();
                 });
                 rs.$digest();
 

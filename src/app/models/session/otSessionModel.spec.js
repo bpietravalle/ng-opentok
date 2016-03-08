@@ -1,6 +1,6 @@
 (function() {
     'use strict';
-    describe('openTokSession', function() {
+    describe('otSessionModel', function() {
         var to, rs, subject, media, test, $q, ApiSpy, subscriber;
         beforeEach(function() {
             ApiSpy = {
@@ -28,14 +28,14 @@
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
                     $provide.value('SessionEvents', {});
-                    $provide.value('openTokPublisher', {});
-                    $provide.value('openTokSubscriber', {});
+                    $provide.value('otPublisherModel', {});
+                    $provide.value('otSubscriberModel', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_openTokSession_) {
-                    subject = _openTokSession_;
+                inject(function(_otSessionModel_) {
+                    subject = _otSessionModel_;
                 });
             });
             afterEach(function() {
@@ -47,9 +47,42 @@
                 }).toThrowError("Please set apiKey during the config phase of your module")
             });
         });
+        describe('Passing configuration to otSubscriber and otPublisher', function() {
+            var pub, sub, props;
+            beforeEach(function() {
+                props = {
+                    height: 500,
+                    width: 500
+                };
+                module('ngOpenTok.models.session', function(otSessionModelProvider) {
+                    otSessionModelProvider.configure({
+                        publisher: {
+                            targetElement: 'stuff',
+                            targetProperties: props
+                        },
+                        subscriber: {
+                            targetElement: 'otherStuff',
+                            targetProperties: props
+                        }
+                    });
+                    inject(function(_otPublisherModel_, _otSubscriberModel_) {
+                        pub = _otPublisherModel_;
+                        sub = _otSubscriberModel_;
+                    });
+                });
+                it("should correctly set subscriber and publisher", function() {
+                    expect(pub.getOptions().targetElement).toEqual('stuff');
+                    expect(sub.getOptions().targetElement).toEqual('otherStuff');
+                    expect(pub.getOptions().targetProperties).toEqual(props);
+                    expect(sub.getOptions().targetProperties).toEqual(props);
+                });
+
+            });
+
+        });
         describe("Without token and session configuration", function() {
             beforeEach(function() {
-                module('ngOpenTok.models.session', function($provide, openTokSessionProvider) {
+                module('ngOpenTok.models.session', function($provide, otSessionModelProvider) {
                     $provide.value('SessionEvents', {});
                     $provide.factory('media', function() {
                         return {
@@ -57,19 +90,19 @@
                         };
                     });
                     $provide.value('participants', {});
-                    $provide.value('openTokPublisher', {});
-                    $provide.value('openTokSubscriber', {});
+                    $provide.value('otPublisherModel', {});
+                    $provide.value('otSubscriberModel', {});
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
-                    openTokSessionProvider.configure({
+                    otSessionModelProvider.configure({
                         apiKey: 12345,
                         session: false,
                         token: false
                     });
                 });
-                inject(function(_media_, _$timeout_, _openTokSession_, _$rootScope_) {
-                    subject = _openTokSession_;
+                inject(function(_media_, _$timeout_, _otSessionModel_, _$rootScope_) {
+                    subject = _otSessionModel_;
                     rs = _$rootScope_;
                     to = _$timeout_;
                     media = _media_;
@@ -127,9 +160,9 @@
         describe("When using session and token services", function() {
             beforeEach(function() {
 
-                module('ngOpenTok.models.session', function($provide, openTokSessionProvider) {
-                    openTokSessionProvider.setApiKey(12345);
-                    openTokSessionProvider.configure({
+                module('ngOpenTok.models.session', function($provide, otSessionModelProvider) {
+                    otSessionModelProvider.configure({
+                        apiKey: 12345,
                         session: true,
                         token: true
                     });
@@ -148,7 +181,7 @@
                             })
                         };
                     });
-                    $provide.factory('openTokSubscriber', function($q) {
+                    $provide.factory('otSubscriberModel', function($q) {
                         return {
                             getOptions: jasmine.createSpy('getOptions').and.returnValue({
                                 targetElement: 'SubscriberContainer',
@@ -163,7 +196,7 @@
 
                         };
                     });
-                    $provide.factory('openTokPublisher', function($q) {
+                    $provide.factory('otPublisherModel', function($q) {
                         return {
                             getOptions: jasmine.createSpy('getOptions').and.returnValue({
                                 targetElement: 'PublisherContainer',
@@ -181,13 +214,13 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_openTokSubscriber_, _$q_, _$timeout_, _openTokSession_, _$rootScope_, _media_) {
+                inject(function(_otSubscriberModel_, _$q_, _$timeout_, _otSessionModel_, _$rootScope_, _media_) {
                     media = _media_;
-                    subscriber = _openTokSubscriber_;
+                    subscriber = _otSubscriberModel_;
                     $q = _$q_;
                     rs = _$rootScope_;
                     to = _$timeout_;
-                    subject = _openTokSession_;
+                    subject = _otSessionModel_;
                 });
             });
             afterEach(function() {
@@ -304,19 +337,29 @@
                 });
             });
             describe("properties", function() {
+                var test;
                 beforeEach(function() {
-                    subject = subject();
+                    test = subject();
                     to.flush();
                     rs.$digest();
                 });
                 it("should have connection prop", function() {
-                    expect(subject.connection).toEqual({});
+                    expect(test.connection).toEqual({});
                 });
                 it("should have a sessionId", function() {
-                    expect(subject.sessionId).toEqual("mySessionId");
+                    expect(test.sessionId).toEqual("mySessionId");
                 });
                 it("should have capabilities prop", function() {
-                    expect(subject.capabilities).toEqual("asdf");
+                    expect(test.capabilities).toEqual("asdf");
+                });
+                describe('return value', function() {
+                    it("should be an obj", function() {
+                        expect(subject()).toBeAn('object');
+                    });
+                    it("should not be a promise", function() {
+                        expect(subject()).not.toBeAPromise();
+                    });
+
                 });
             });
             describe("Queries", function() {

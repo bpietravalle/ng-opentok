@@ -12,7 +12,7 @@
                     });
                 });
 
-                $provide.factory('openTokPublisher', function($q) {
+                $provide.factory('otPublisherModel', function($q) {
                     function promiseWrap(name, obj) {
                         if (!obj) {
                             obj = {}
@@ -40,8 +40,8 @@
                     };
                 });
             });
-            inject(function(_$compile_, _eventSetter_, _$rootScope_, _openTokPublisher_) {
-                ot = _openTokPublisher_;
+            inject(function(_$compile_, _eventSetter_, _$rootScope_, _otPublisherModel_) {
+                ot = _otPublisherModel_;
                 es = _eventSetter_;
                 $compile = _$compile_;
                 rs = _$rootScope_;

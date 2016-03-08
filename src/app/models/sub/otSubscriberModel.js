@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.subscriber')
-        .provider('openTokSubscriber', OpenTokSubscriberProvider);
+        .provider('otSubscriberModel', OpenTokSubscriberProvider);
 
     function OpenTokSubscriberProvider() {
         var pv = this,

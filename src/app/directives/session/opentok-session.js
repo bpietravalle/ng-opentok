@@ -1,11 +1,11 @@
 (function() {
     'use strict';
 
-    angular.module('ngOpenTok.directives')
-        .directive('opentokSession', openTokSessionDirective);
+    angular.module('ngOpenTok.directives.session')
+        .directive('opentokSession', OpenTokSessionDirective);
 
     /** @ngInject */
-    function openTokSessionDirective($q, openTokSession, eventSetter) {
+    function OpenTokSessionDirective($q, otSessionModel, eventSetter) {
 
         return {
             restrict: 'E',
@@ -25,7 +25,7 @@
         };
 
         function linkFn(scope) {
-            scope.session = openTokSession(scope.id)
+            scope.session = otSessionModel(scope.id)
             scope.session.connect(scope.token)
                 .then(function() {
                     eventSetter(scope, 'session');

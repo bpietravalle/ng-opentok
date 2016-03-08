@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('ngOpenTok.models.publisher')
-        .provider('openTokPublisher', OpenTokPublisherProvider);
+        .provider('otPublisherModel', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
         var pv = this,
