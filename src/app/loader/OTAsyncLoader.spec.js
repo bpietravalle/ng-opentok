@@ -18,6 +18,7 @@
             });
             afterEach(function() {
                 $window = null;
+                subject = null;
             });
             it("should be defined", function() {
                 expect(subject).toBeDefined();
@@ -28,6 +29,7 @@
                 var script = $window.document.getElementsByTagName('script')[lastScriptIndex];
                 expect(script.src).toContain(url);
                 expect(script.src).not.toContain('https');
+                expect(script.onload).toBeA('function');
             });
         });
         describe("Defaults", function() {
@@ -42,34 +44,12 @@
                     $window.OT = undefined;
                 });
                 afterEach(function() {
+                    subject = null;
                     $window = null;
                 });
                 it("should be defined", function() {
                     expect(subject).toBeDefined();
                 });
-                // describe("random fn on window", function() {
-                //     var keys, arr;
-                //     beforeEach(function() {
-                //         subject.load();
-                //         keys = Object.keys($window),
-                //             arr = [];
-
-                //         function matchVal(y) {
-                //             if (y.match('onOpenTokReady')) {
-                //                 arr.push(y);
-                //             }
-                //         }
-                //         keys.forEach(matchVal)
-                //     });
-                //     it("shoudl construct a function on window", function() {
-                //         expect(arr.length).toBeGreaterThan(0);
-                //     });
-                //     it("should remove fn after calling", function() {
-                //         $window[arr[0]]()
-                //         expect($window[arr[0]]).toEqual(null);
-                //     });
-                // });
-
             });
             describe("With OT object defined", function() {
                 beforeEach(function() {
@@ -82,6 +62,7 @@
                     $window.OT = {};
                 });
                 afterEach(function() {
+                    subject = null;
                     $window = null;
                 });
                 it("should be defined", function() {
@@ -99,7 +80,6 @@
                         expect(script.src).toContain(url);
                         expect(script.type).toContain("text/javascript");
                         expect(script.id).toContain("opentok_load_");
-                        expect(script.onload).toBeA('function');
                     });
                     it("should be a promise", function() {
                         var test = subject.load();

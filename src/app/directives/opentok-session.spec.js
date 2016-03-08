@@ -7,6 +7,7 @@
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
             module('ngOpenTok.directives', function($provide) {
+                $provide.value('OTAsyncLoader', {});
                 $provide.factory('eventSetter', function($q) {
                     return jasmine.createSpy('eventSetter').and.callFake(function() {
                         return $q.when({});
@@ -24,11 +25,23 @@
                     }
                     return function() {
                         sessionSpy = {
+                            connection: {
+                                connectionId: "string",
+                                data: "data",
+                                capabilities: {
+                                    forceDisconnect: 1,
+                                    forceUnpublish: 1,
+                                    publish: 1,
+                                    subscribe: 1
+                                }
+                            },
                             once: promiseWrap('once'),
                             on: promiseWrap('on'),
                             connect: promiseWrap('connect'),
+                            unpublish: promiseWrap('unpublish'),
                             publish: promiseWrap('publish'),
                             signal: promiseWrap('subscribe'),
+                            unsubscribe: promiseWrap('unsubscribe'),
                             subscribe: promiseWrap('subscribe', {
                                 element: "subscriberElement",
                                 id: "subscriberId"
@@ -61,6 +74,7 @@
                 iscope = elem.isolateScope();
                 ctrl = elem.controller('opentokSession');
             });
+            sessionSpy.capabilities = 3;
         });
         afterEach(function() {
             scope = null;
@@ -115,12 +129,37 @@
             it("should be defined", function() {
                 expect(ctrl).toBeDefined();
             });
-            describe("getSession", function() {
-                it("should return session obj", function() {
-                    expect(ctrl.getSession()).toEqual(iscope.session);
+            var ctrlMeths = [
+                ['publish', ['pubSpy']],
+                ['subscribe', ['stream', 'element', 'props']],
+                ['unpublish', ['pub']],
+                ['unsubscribe', ['stream']],
+                ['forceUnpublish', ['stream']],
+                ['forceDisconnect', ['connection']],
+                ['signal', ['dataToSend']]
+            ];
+
+            function testCtrlMeths(y) {
+                describe(y[0], function() {
+                    it('should call ' + y + ' on session object', function() {
+                        ctrl[y[0]].apply(null, y[1]);
+                        var l = y[1].length;
+                        for (var i = 0; i < l; i++) {
+                            expect(sessionSpy[y[0]].calls.argsFor(0)[i]).toEqual(y[1][i]);
+                        }
+                    });
+                });
+
+            }
+            // ctrlMeths.forEach(testCtrlMeths);
+            describe('isLocal', function() {
+                it("should return a boolean", function() {
+                    var test = ctrl.isLocal('notLocal');
+                    expect(test).toBeFalsey;
+                    test = ctrl.isLocal('string');
+                    expect(test).toBeTruthy;
                 });
             });
-
         });
 
         // it("

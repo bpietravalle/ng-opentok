@@ -5,15 +5,15 @@
         .directive('opentokSession', openTokSessionDirective);
 
     /** @ngInject */
-    function openTokSessionDirective($q, openTokSession, eventSetter) {
+    function openTokSessionDirective($q, openTokSession, capabilitySetter, eventSetter) {
 
         return {
             restrict: 'E',
             transclude: true,
             scope: {
                 session: '=',
-                streams: '=',
-                connections: '=',
+                // streams: '=',
+                // connections: '=',
                 onceEvents: '=?',
                 onEvents: '=?',
                 id: '&?',
@@ -21,34 +21,57 @@
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
-            link: function(scope) {
-                scope.session = openTokSession(scope.id)
-                scope.session.connect(scope.token)
-                    .then(function() {
-                        eventSetter(scope, 'session');
-                    }).catch(standardError);
-            }
+            link: linkFn
         };
 
-        function standardError(err) {
-            return $q.reject(err);
+        function linkFn(scope) {
+            scope.session = openTokSession(scope.id)
+            scope.session.connect(scope.token)
+                .then(function() {
+                    eventSetter(scope, 'session');
+                    capabilitySetter(scope)
+                }).catch(standardError);
+
+
+            function standardError(err) {
+                return $q.reject(err);
+            }
         }
 
         /** @ngInject */
         function OpenTokSessionController($scope) {
             var vm = this;
-            vm.getSession = getSession;
+            vm.isConnected = isConnected;
+            vm.isLocal = isLocal;
+
+            // vm.publish = publish;
+            // vm.unpublish = unpublish;
+            // vm.subscribe = subscribe;
+            // vm.unsubscribe = unsubscribe;
+            // vm.forceDisconnect = forceDisconnect;
+            // vm.forceUnpublish = forceUnpublish;
+            vm.signal = signal;
+
 
             function getSession() {
                 return $scope.session;
             }
 
-            /*
-             * get session;
-             * set session;
-             *
-             */
+            function signal(data) {
+                return getSession().signal(data);
+            }
 
+            function getConnection() {
+                return getSession().connection
+            }
+
+            function isConnected() {
+                return angular.isDefined(getConnection())
+            }
+
+            function isLocal(str) {
+                return getConnection().connectionId === str;
+            }
         }
 
 
