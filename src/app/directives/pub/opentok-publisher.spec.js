@@ -102,7 +102,6 @@
             describe('On destroy', function() {
                 describe('when local', function() {
                     beforeEach(function() {
-                        spyOn(sessionCtrl, 'isLocal').and.returnValue(true);
                         elem = compiledElem(elem, scope);
                         scope.$broadcast('$destroy');
                         rs.$digest();
@@ -116,8 +115,8 @@
                 });
                 describe('when not local', function() {
                     beforeEach(function() {
-                        spyOn(sessionCtrl, 'isLocal').and.returnValue(false);
                         elem = compiledElem(elem, scope);
+                        pubSpy.stream = null;
                         scope.$broadcast('$destroy');
                         rs.$digest();
                     });

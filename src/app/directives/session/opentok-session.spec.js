@@ -187,14 +187,6 @@
                         ctrl.remove('stuff', {});
                     }).toThrow();
                 });
-                it("should throw error if obj not found", function() {
-                    iscope.publishers.push('a');
-                    iscope.publishers.push('b');
-                    iscope.publishers.push('c');
-                    expect(function() {
-                        ctrl.remove('publishers', 'd');
-                    }).toThrow();
-                });
                 it("should remove publisher from array", function() {
                     iscope.publishers.push('a');
                     iscope.publishers.push('b');

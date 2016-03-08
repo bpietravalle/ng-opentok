@@ -11,7 +11,7 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                streams: '=',
+                stream: '=',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
