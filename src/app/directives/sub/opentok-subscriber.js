@@ -19,7 +19,13 @@
             link: function(scope, element, a, ctrl) {
                 var stream = scope.stream;
                 // if (ctrl.isConnected()) {
-                scope.subscriber = ctrl.subscribe(stream, element[0]);
+
+                scope.$on('sessionReady', subscribe)
+
+                function subscribe() {
+                    scope.subscriber = ctrl.subscribe(stream, element[0]);
+                }
+
                 // }
                 eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);

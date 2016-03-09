@@ -2,7 +2,7 @@
     'use strict';
 
     describe("opentokPublisher Directive", function() {
-        var $compile, sessionCtrl, rs, sessionSpy, scope, ot, es, elem, pubSpy;
+        var parent, $compile, sessionCtrl, rs, scope, ot, es, elem, pubSpy;
 
         beforeEach(function() {
             module('ngOpenTok.directives.publisher', function($provide) {
@@ -45,15 +45,14 @@
                 es = _eventSetter_;
                 $compile = _$compile_;
                 rs = _$rootScope_;
-                scope = rs.$new()
+                parent = rs.$new()
+                scope = parent.$new()
             });
             sessionCtrl = {
                 isConnected: function() {
                     return true
                 },
-                getSession: function() {
-                    return sessionSpy;
-                },
+                addPublisher: jasmine.createSpy('addPublisher'),
                 remove: jasmine.createSpy('remove'),
                 publish: jasmine.createSpy('publish'),
                 unpublish: jasmine.createSpy('unpublish'),
@@ -132,6 +131,14 @@
                         expect(ctrl.remove.calls.argsFor(0)[1]).toEqual(pubSpy);
                     });
                 });
+            });
+            describe("on 'sessionReady'", function() {
+                it("should call 'addPublisher'", function() {
+                    parent.$broadcast('sessionReady')
+                    expect(sessionCtrl.addPublisher).toHaveBeenCalledWith(pubSpy);
+                });
+
+
             });
         });
     });

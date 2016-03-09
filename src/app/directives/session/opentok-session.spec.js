@@ -2,7 +2,7 @@
     'use strict';
 
     describe("opentokSession Directive", function() {
-        var ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
+        var spy, child, $compile, ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
 
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
@@ -41,6 +41,7 @@
                             unpublish: promiseWrap('unpublish'),
                             publish: promiseWrap('publish'),
                             signal: promiseWrap('subscribe'),
+                            publishers: [],
                             unsubscribe: promiseWrap('unsubscribe'),
                             subscribe: promiseWrap('subscribe', {
                                 element: "subscriberElement",
@@ -53,13 +54,13 @@
                     };
                 });
             });
-            inject(function($compile, _eventSetter_, _$rootScope_) {
+            inject(function(_$compile_, _eventSetter_, _$rootScope_) {
                 rs = _$rootScope_;
                 es = _eventSetter_;
+                $compile = _$compile_;
                 scope = rs.$new()
                 scope.mySession = {};
                 scope.token = "heresTheToken";
-                scope.myPublishers = [];
                 scope.mySessionId = "heresTheSessionId";
                 scope.pcontainer = "heresTheContainer"
                 scope.mySessionOnEvents = {
@@ -75,6 +76,9 @@
                 $compile(elem)(scope);
                 scope.$digest();
                 iscope = elem.isolateScope();
+                child = iscope.$new();
+                spy = jasmine.createSpy('spy');
+                child.$on('sessionReady',spy);
                 ctrl = elem.controller('opentokSession');
             });
             sessionSpy.capabilities = 3;
@@ -126,6 +130,17 @@
                 expect(es.calls.argsFor(0)[1]).toEqual('session');
                 expect(es.calls.argsFor(0)[0].token).toEqual(scope.token);
                 expect(es.calls.argsFor(0)[0].id).toEqual(scope.mySessionId);
+            });
+            it("should broadcast 'sessionReady' message", function() {
+                // elem = angular.element("<opentok-session publishers='myPublishers' " +
+                //     "token='token' once-events='mySessionOnceEvents' id='mySessionId' " +
+                //     "session='mySession' on-events='mySessionOnEvents'></opentok-session>");
+                // $compile(elem)(scope);
+                // scope.$digest();
+                // iscope = elem.isolateScope();
+                rs.$digest();
+                // iscope.$digest();
+                // expect(spy).toHaveBeenCalled();
             });
         });
         describe("Controller", function() {

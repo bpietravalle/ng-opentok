@@ -18,9 +18,10 @@
             template: "<div class='opentok-publisher'></div>",
             link: function(scope, element, a, ctrl) {
                 scope.publisher = otPublisherModel.init(element[0]);
-                if (ctrl.isConnected()) ctrl.publish(scope.publisher);
                 eventSetter(scope, 'publisher');
                 scope.$on('$destroy', destroy);
+
+                scope.$on('sessionReady', pushPublisher);
 
                 function destroy() {
                     if (scope.publisher.stream) {
@@ -29,7 +30,10 @@
                         scope.publisher.destroy();
                         ctrl.remove('publishers', scope.publisher);
                     }
-                    //scope.publisher = null - put in session
+                }
+
+                function pushPublisher() {
+                    ctrl.addPublisher(scope.publisher);
                 }
 
             }

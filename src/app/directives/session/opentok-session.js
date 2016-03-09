@@ -34,6 +34,7 @@
                     scope.session.connect(scope.token)
                 }).then(function() {
                     eventSetter(scope, 'session');
+                    scope.$broadcast('sessionReady');
                 }).catch(standardError);
 
             scope.$on('$destroy', destroy);
@@ -54,6 +55,7 @@
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
 
+            vm.addPublisher = addPublisher;
             vm.publish = publish;
             vm.unpublish = unpublish;
             vm.subscribe = subscribe;
@@ -112,6 +114,10 @@
             function subscribe(s, t, p) {
                 //should return otsub object
                 return getSession().subscribe(s, t, p);
+            }
+
+            function addPublisher(obj) {
+                getSession().publishers.push(obj);
             }
 
             function getConnection() {

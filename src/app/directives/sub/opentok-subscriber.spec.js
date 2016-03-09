@@ -2,7 +2,7 @@
     'use strict';
 
     describe("opentokSubscriber Directive", function() {
-        var $compile, sessionCtrl, rs, sessionSpy, scope, es, elem, subSpy;
+        var parent, $compile, sessionCtrl, rs, sessionSpy, scope, es, elem, subSpy;
 
         beforeEach(function() {
             module('ngOpenTok.directives.subscriber', function($provide) {
@@ -40,7 +40,8 @@
                 es = _eventSetter_;
                 $compile = _$compile_;
                 rs = _$rootScope_;
-                scope = rs.$new()
+                parent = rs.$new();
+                scope = parent.$new();
             });
             sessionCtrl = {
                 getSession: function() {
@@ -88,6 +89,7 @@
         describe("Initialization", function() {
             it("should call init on subscriber with element and properties object", function() {
                 var ctrl = sessionCtrl;
+                parent.$broadcast('sessionReady');
                 expect(ctrl.subscribe.calls.argsFor(0)[1].localName).toEqual("opentok-subscriber");
             });
             it("should call 'eventSetter' with scope and 'subscriber'", function() {
