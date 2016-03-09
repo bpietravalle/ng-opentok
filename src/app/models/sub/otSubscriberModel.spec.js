@@ -1,7 +1,7 @@
 (function() {
     'use strict';
     describe('otSubscriberModel', function() {
-        var test, subject, rs, subscriberSpy;
+        var ot, test, subject, rs, subscriberSpy;
         afterEach(function() {
             subject = null;
         });
@@ -66,13 +66,17 @@
             });
         });
         describe("With Valid configuration", function() {
-            beforeEach(function() {
+            beforeEach(function(done) {
                 module('ngOpenTok.models.subscriber');
                 inject(function(_otSubscriberModel_, _$rootScope_) {
                     rs = _$rootScope_;
-                    subject = _otSubscriberModel_.init(subscriberSpy);
+                    ot = _otSubscriberModel_;
+                });
+                ot.init(subscriberSpy).then(function(res) {
+                    subject = res;
                 });
                 rs.$digest();
+                done();
 
             });
             afterEach(function() {

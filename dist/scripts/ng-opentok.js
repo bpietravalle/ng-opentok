@@ -690,21 +690,22 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                stream: '&',
+                stream: '=',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                var stream = scope.stream();
+                var stream = scope.stream;
                 // if (ctrl.isConnected()) {
 
-                scope.$on('sessionReady', subscribe)
+                // scope.$on('sessionReady', subscribe)
 
-                function subscribe() {
+                // function subscribe() {
                     scope.subscriber = ctrl.subscribe(stream, element[0]);
                     $log.info("We streamin");
-                }
+                    $log.info(scope.subscriber);
+                // }
 
                 // }
                 eventSetter(scope, 'subscriber');
@@ -1290,22 +1291,24 @@
         self._options = self._utils.paramCheck(options, "obj", {});
         self._param = param
 
-        initSubscriber(self._param);
 
         function initSubscriber(obj) {
             var methodsToExtend = ['on', 'once', 'getStats'];
             self._subscriber = obj;
             var keys = Object.keys(self._subscriber);
-            self._q.all(keys.map(function(key) {
+            return self._q.all(keys.map(function(key) {
                 if (methodsToExtend.indexOf(key) === -1) {
                     self[key] = self._subscriber[key];
                 }
-            })).catch(standardError);
+            })).then(function() {
+                return self;
+            }).catch(standardError);
         }
 
         function standardError(err) {
             return self._utils.standardError(err);
         }
+        return initSubscriber(self._param);
 
     }
 

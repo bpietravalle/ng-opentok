@@ -59,22 +59,24 @@
         self._options = self._utils.paramCheck(options, "obj", {});
         self._param = param
 
-        initSubscriber(self._param);
 
         function initSubscriber(obj) {
             var methodsToExtend = ['on', 'once', 'getStats'];
             self._subscriber = obj;
             var keys = Object.keys(self._subscriber);
-            self._q.all(keys.map(function(key) {
+            return self._q.all(keys.map(function(key) {
                 if (methodsToExtend.indexOf(key) === -1) {
                     self[key] = self._subscriber[key];
                 }
-            })).catch(standardError);
+            })).then(function() {
+                return self;
+            }).catch(standardError);
         }
 
         function standardError(err) {
             return self._utils.standardError(err);
         }
+        return initSubscriber(self._param);
 
     }
 
