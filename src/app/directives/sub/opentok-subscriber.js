@@ -5,25 +5,26 @@
         .directive('opentokSubscriber', OpenTokSubscriberDirective);
 
     /** @ngInject */
-    function OpenTokSubscriberDirective($q, eventSetter) {
+    function OpenTokSubscriberDirective($q, eventSetter, $log) {
 
         return {
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                stream: '=',
+                stream: '&',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                var stream = scope.stream;
+                var stream = scope.stream();
                 // if (ctrl.isConnected()) {
 
                 scope.$on('sessionReady', subscribe)
 
                 function subscribe() {
                     scope.subscriber = ctrl.subscribe(stream, element[0]);
+                    $log.info("We streamin");
                 }
 
                 // }

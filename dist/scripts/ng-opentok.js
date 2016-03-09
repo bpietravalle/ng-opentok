@@ -485,9 +485,10 @@
             template: "<div class='opentok-publisher'></div>",
             link: function(scope, element, a, ctrl) {
                 scope.publisher = otPublisherModel.init(element[0]);
-                if (ctrl.isConnected()) ctrl.publish(scope.publisher);
                 eventSetter(scope, 'publisher');
                 scope.$on('$destroy', destroy);
+
+                scope.$on('sessionReady', pushPublisher);
 
                 function destroy() {
                     if (scope.publisher.stream) {
@@ -496,7 +497,10 @@
                         scope.publisher.destroy();
                         ctrl.remove('publishers', scope.publisher);
                     }
-                    //scope.publisher = null - put in session
+                }
+
+                function pushPublisher() {
+                    ctrl.addPublisher(scope.publisher);
                 }
 
             }
@@ -555,12 +559,9 @@
             transclude: true,
             scope: {
                 session: '=',
-                streams: '=?',
-                publishers: '=?',
                 onceEvents: '=?',
-                onEvents: '=?',
-                id: '=?',
-                token: '='
+                onEvents: '=?'
+                    // token: '='
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
@@ -568,16 +569,14 @@
         };
 
         function linkFn(scope) {
-            if (!scope.publishers) scope.publishers = [];
-            if (!scope.streams) scope.streams = [];
 
-            otSessionModel(scope.id)
-                .then(function(res) {
-                    scope.session = res;
-                    scope.session.connect(scope.token)
-                }).then(function() {
-                    eventSetter(scope, 'session');
-                }).catch(standardError);
+            // otSessionModel(scope.id)
+            //     .then(function(res) {
+            // scope.session.connect(scope.token)
+            //     .then(function() {
+            eventSetter(scope, 'session');
+            scope.$broadcast('sessionReady');
+            // }).catch(standardError);
 
             scope.$on('$destroy', destroy);
 
@@ -597,6 +596,7 @@
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
 
+            vm.addPublisher = addPublisher;
             vm.publish = publish;
             vm.unpublish = unpublish;
             vm.subscribe = subscribe;
@@ -637,10 +637,7 @@
 
 
             function remove(type, obj) {
-                if (type !== 'publishers') {
-                    throw new Error("Invalid type: " + type);
-                }
-                var arr = $scope[type],
+                var arr = $scope.session[type],
                     idx = arr.indexOf(obj);
                 if (idx !== -1) {
                     arr.splice(idx, 1);
@@ -655,6 +652,10 @@
             function subscribe(s, t, p) {
                 //should return otsub object
                 return getSession().subscribe(s, t, p);
+            }
+
+            function addPublisher(obj) {
+                getSession().publishers.push(obj);
             }
 
             function getConnection() {
@@ -678,26 +679,33 @@
 (function() {
     'use strict';
 
-    OpenTokSubscriberDirective.$inject = ["$q", "eventSetter"];
+    OpenTokSubscriberDirective.$inject = ["$q", "eventSetter", "$log"];
     angular.module('ngOpenTok.directives.subscriber')
         .directive('opentokSubscriber', OpenTokSubscriberDirective);
 
     /** @ngInject */
-    function OpenTokSubscriberDirective($q, eventSetter) {
+    function OpenTokSubscriberDirective($q, eventSetter, $log) {
 
         return {
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                streams: '=',
+                stream: '&',
                 onEvents: '=?',
                 onceEvents: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                var stream = scope.stream;
+                var stream = scope.stream();
                 // if (ctrl.isConnected()) {
-                scope.subscriber = ctrl.subscribe(stream, element[0]);
+
+                scope.$on('sessionReady', subscribe)
+
+                function subscribe() {
+                    scope.subscriber = ctrl.subscribe(stream, element[0]);
+                    $log.info("We streamin");
+                }
+
                 // }
                 eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);
@@ -878,13 +886,13 @@
         pv._options = {};
         pv.configure = configure;
 
-				/**
-				 * @param{Object} opts
-				 * @param{Number} opts.apiKey - required
-				 * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
-				 * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
-				 * other options see below
-				 */
+        /**
+         * @param{Object} opts
+         * @param{Number} opts.apiKey - required
+         * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
+         * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
+         * other options see below
+         */
 
         function configure(opts) {
             angular.extend(pv._options, opts);
@@ -964,6 +972,9 @@
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
+        self.connections = [];
+        self.streams = [];
+        self.publishers = [];
 
         function getCTX(arg) {
             if (angular.isUndefined(arg)) {
@@ -979,11 +990,11 @@
                 .catch(standardError);
 
             function completeAction(res) {
-                var methodsToExtend = ['on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
+                var methodsAndPropsToExtend = ['streams', 'connections', 'publishers', 'on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
                 self._session = res[0].initSession(self._apiKey, res[1])
                 var keys = Object.keys(self._session);
                 self._q.all(keys.map(function(key) {
-                    if (methodsToExtend.indexOf(key) === -1) {
+                    if (methodsAndPropsToExtend.indexOf(key) === -1) {
                         self[key] = self._session[key];
                     }
                 }));
@@ -1086,7 +1097,7 @@
         return submitToken(str);
 
         function submitToken(val) {
-          self._log.info(self._session);
+            self._log.info(self._session);
             return self._utils.handler(function(cb) {
                     self._session.connect(val, cb);
                 })

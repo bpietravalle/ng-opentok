@@ -12,12 +12,9 @@
             transclude: true,
             scope: {
                 session: '=',
-                streams: '=?',
-                publishers: '=?',
                 onceEvents: '=?',
-                onEvents: '=?',
-                id: '=?',
-                token: '='
+                onEvents: '=?'
+                    // token: '='
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
@@ -25,17 +22,14 @@
         };
 
         function linkFn(scope) {
-            if (!scope.publishers) scope.publishers = [];
-            if (!scope.streams) scope.streams = [];
 
-            otSessionModel(scope.id)
-                .then(function(res) {
-                    scope.session = res;
-                    scope.session.connect(scope.token)
-                }).then(function() {
-                    eventSetter(scope, 'session');
-                    scope.$broadcast('sessionReady');
-                }).catch(standardError);
+            // otSessionModel(scope.id)
+            //     .then(function(res) {
+            // scope.session.connect(scope.token)
+            //     .then(function() {
+            eventSetter(scope, 'session');
+            scope.$broadcast('sessionReady');
+            // }).catch(standardError);
 
             scope.$on('$destroy', destroy);
 
@@ -96,10 +90,7 @@
 
 
             function remove(type, obj) {
-                if (type !== 'publishers') {
-                    throw new Error("Invalid type: " + type);
-                }
-                var arr = $scope[type],
+                var arr = $scope.session[type],
                     idx = arr.indexOf(obj);
                 if (idx !== -1) {
                     arr.splice(idx, 1);

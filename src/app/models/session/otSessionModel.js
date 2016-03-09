@@ -10,13 +10,13 @@
         pv._options = {};
         pv.configure = configure;
 
-				/**
-				 * @param{Object} opts
-				 * @param{Number} opts.apiKey - required
-				 * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
-				 * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
-				 * other options see below
-				 */
+        /**
+         * @param{Object} opts
+         * @param{Number} opts.apiKey - required
+         * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
+         * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
+         * other options see below
+         */
 
         function configure(opts) {
             angular.extend(pv._options, opts);
@@ -96,6 +96,9 @@
         self._subscriberParams = getSubscriberParams;
         self._initializeSubscriber = initializeSubscriber;
 
+        self.connections = [];
+        self.streams = [];
+        self.publishers = [];
 
         function getCTX(arg) {
             if (angular.isUndefined(arg)) {
@@ -111,11 +114,11 @@
                 .catch(standardError);
 
             function completeAction(res) {
-                var methodsToExtend = ['on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
+                var methodsAndPropsToExtend = ['streams', 'connections', 'publishers', 'on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
                 self._session = res[0].initSession(self._apiKey, res[1])
                 var keys = Object.keys(self._session);
                 self._q.all(keys.map(function(key) {
-                    if (methodsToExtend.indexOf(key) === -1) {
+                    if (methodsAndPropsToExtend.indexOf(key) === -1) {
                         self[key] = self._session[key];
                     }
                 }));
@@ -218,7 +221,7 @@
         return submitToken(str);
 
         function submitToken(val) {
-          self._log.info(self._session);
+            self._log.info(self._session);
             return self._utils.handler(function(cb) {
                     self._session.connect(val, cb);
                 })
