@@ -91,9 +91,7 @@
 
     function on(eventName, ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.eventHandler(function(cb) {
             return subscriber.on(eventName, cb);
         }, ctx);
@@ -101,9 +99,7 @@
 
     function once(eventName, ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.eventHandler(function(cb) {
             return subscriber.once(eventName, cb);
         }, ctx);
@@ -111,9 +107,7 @@
 
     function getStats(ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.handler(function(cb) {
             return subscriber.getStats(cb);
         }, ctx);
