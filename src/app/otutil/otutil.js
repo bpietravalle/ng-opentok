@@ -82,8 +82,9 @@
                 fn.call(ctx, function(err, res) {
                     if (err !== null) {
                         def.reject(err);
+                    } else {
+                        def.resolve(res);
                     }
-                    return def.resolve(res);
                 });
             });
         }

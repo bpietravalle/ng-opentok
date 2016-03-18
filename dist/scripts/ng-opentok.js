@@ -765,7 +765,7 @@
 
             /**
              * @constructor
-             * @param{String} [targetElement] - DOM id of publisher object
+             * @param{String|Object} [targetElement] - DOM id  or element for publisher
              * @param{Object} [props] - properties of publisher object
              * @description params should be defined during config phase
              */
@@ -842,9 +842,7 @@
 
     function on(eventName, ctx) {
         var publisher = this._publisher;
-        if (!ctx) {
-            ctx = publisher;
-        }
+        if (!ctx) ctx = publisher;
         return this._utils.eventHandler(function(cb) {
             return publisher.on(eventName, cb);
         }, ctx);
@@ -852,9 +850,7 @@
 
     function once(eventName, ctx) {
         var publisher = this._publisher;
-        if (!ctx) {
-            ctx = publisher;
-        }
+        if (!ctx) ctx = publisher;
         return this._utils.eventHandler(function(cb) {
             return publisher.once(eventName, cb);
         }, ctx);
@@ -1323,9 +1319,7 @@
 
     function on(eventName, ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.eventHandler(function(cb) {
             return subscriber.on(eventName, cb);
         }, ctx);
@@ -1333,9 +1327,7 @@
 
     function once(eventName, ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.eventHandler(function(cb) {
             return subscriber.once(eventName, cb);
         }, ctx);
@@ -1343,9 +1335,7 @@
 
     function getStats(ctx) {
         var subscriber = this._subscriber;
-        if (!ctx) {
-            ctx = subscriber;
-        }
+        if (!ctx) ctx = subscriber;
         return this._utils.handler(function(cb) {
             return subscriber.getStats(cb);
         }, ctx);
