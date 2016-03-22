@@ -11,10 +11,10 @@
             restrict: 'E',
             transclude: true,
             scope: {
-                session: '=',
+                sessionId: '@',
                 onceEvents: '=?',
-                onEvents: '=?'
-                    // token: '='
+                onEvents: '=?',
+                token: '@'
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
@@ -23,8 +23,19 @@
 
         function linkFn(scope) {
 
-            eventSetter(scope, 'session');
-            scope.$broadcast('sessionReady');
+            otSessionModel(scope.sessionId, scope.token)
+                .then(setSessionAndEvents)
+                .then(broadcastReady)
+                .catch(standardError);
+
+            function setSessionAndEvents(res) {
+                scope.session = res;
+                eventSetter(scope, 'session');
+            }
+
+            function broadcastReady() {
+                scope.$broadcast('sessionReady');
+            }
 
             scope.$on('$destroy', destroy);
 

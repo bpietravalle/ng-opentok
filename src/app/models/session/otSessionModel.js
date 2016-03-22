@@ -10,9 +10,14 @@
         pv._options = {};
         pv.configure = configure;
 
+        //TODO other options:
+        //autoSubscribe
+
+
         /**
          * @param{Object} opts
          * @param{Number} opts.apiKey - required
+         * @param{Boolean} [opts.autoConnect] - connect to session on initialization - default === true
          * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * other options see below
@@ -35,14 +40,14 @@
 
 
         /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $injector, otSubscriberModel, otPublisherModel, $log) {
+        function main($q, OTApi, otutil, $log) {
             /**
              * @constructor
-             * @param{Array|String} paramsOrSessionId if you set session: true in config phase then
-             * ["params","to","pass","to","session","service"].  Otherwise this is the sessionId
-             * @param{Object} [ctx] context of method - only used if you set sesion: true in config phase
+             * @param{Object} params
+             * @param{String} params.sessionId
+             * @param{String} params.token
              */
-            return function(paramsOrSessionId, ctx, options) {
+            return function(params, options) {
                 if (!options) {
                     options = {};
                 }
@@ -51,150 +56,103 @@
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
 
-                return new OpenTokSession($q, $timeout, OTApi, otutil, $injector, otSubscriberModel, otPublisherModel, $log, paramsOrSessionId, ctx, options);
+                return new OpenTokSession($q, OTApi, otutil, $log, params, options);
             }
         }
     }
 
 
-    function OpenTokSession(q, timeout, api, utils, injector, subscriber, publisher, log, params, ctx, options) {
+    function OpenTokSession(q, api, utils, log, params, options) {
         var self = this;
         self._q = q;
-        self._timeout = timeout;
         self._api = api;
         self._utils = utils;
-        self._injector = injector;
-        self._subscriberObject = subscriber
-        self._publisherObject = publisher
         self._log = log;
-        self._params = params;
-        self._ctx = ctx;
+        self._params = params || {};
+        if (checkParamKeys(self._params, 'sessionId')) {
+            throw new Error("SessionId must be defined");
+        }
+        if (checkParamKeys(self._params, 'token')) {
+            throw new Error("Token must be defined");
+        }
         self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
-        self._sessionId = self._utils.paramCheck(self._options.session, 'bool', false);
-        self._token = self._utils.paramCheck(self._options.token, 'bool', false);
+        self._sessionId = self._params.sessionId;
+        self._token = self._params.token;
+        self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
 
-        // if (self._token) {
-        //     self._autoConnect = self._utils.paramCheck(self._options.autoConnect, 'bool', true);
-        // }
-
-        if (self._sessionId) {
-            self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
-            self._sessionIdMethod = self._utils.paramCheck(self._options.sessionIdMethod, "str", "getSessionId");
-            self._sessionObject = self._injector.get(self._sessionService);
+        if (!self._autoConnect) {
+            self.connect = connect;
         }
 
-
-        if (self._token) {
-            self._tokenService = self._utils.paramCheck(self._options.tokenService, "str", "participants");
-            self._tokenMethod = self._utils.paramCheck(self._options.tokenMethod, "str", "getToken");
-            self._tokenObject = self._injector.get(self._tokenService);
-            self._getToken = getToken;
-        }
-
-        self._initializePublisher = initializePublisher;
-        self._subscriberParams = getSubscriberParams;
-        self._initializeSubscriber = initializeSubscriber;
-
+        self._subscriberParams = self._options.subscriber || null;
         self.connections = [];
         self.streams = [];
         self.publishers = [];
 
-        function getCTX(arg) {
-            if (angular.isUndefined(arg)) {
-                return null;
-            }
-            return arg;
-        }
+        function initSession(sessionId) {
 
-
-        function initSession(args, ctx) {
-            return loadAndGetSessionId(args, ctx)
-                .then(completeAction)
+            return self._api
+                .then(setSession)
+                .then(checkConnect)
                 .catch(standardError);
 
-            function completeAction(res) {
+            function setSession(res) {
                 var methodsAndPropsToExtend = ['streams', 'connections', 'publishers', 'on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
-                self._session = res[0].initSession(self._apiKey, res[1])
+                self._session = res.initSession(self._apiKey, sessionId)
                 var keys = Object.keys(self._session);
                 self._q.all(keys.map(function(key) {
+
                     if (methodsAndPropsToExtend.indexOf(key) === -1) {
                         self[key] = self._session[key];
                     }
                 }));
+            }
 
+            function checkConnect() {
+                if (self._autoConnect) {
+                    connect();
+                }
                 return self;
             }
-
         }
 
-        function loadAndGetSessionId(args, ctx) {
-            return self._q.all([getApi(), getSessionId(args, ctx)]);
+        function checkParamKeys(obj, str) {
+            var keys = self._utils.keys(obj);
+            return keys.indexOf(str) === -1;
         }
 
-        function getSessionId(args, ctx) {
-            if (self._sessionId) {
-                args = arrayCheck(args);
-                return self._timeout(function() {
-                    return self._sessionObject[self._sessionIdMethod].apply(ctx, args);
+
+        // function arrayCheck(args) {
+        //     if (!args) {
+        //         args = [];
+        //     }
+        //     if (args && !angular.isArray(args)) {
+        //         args = [args]
+        //     }
+
+        //     return args;
+        // }
+
+
+        function connect() {
+            return self._utils.handler(function(cb) {
+                    self._session.connect(self._token, cb);
+                })
+                .catch(function(err) {
+                    return self._utils.standardError(err);
                 });
-            }
-            return self._q.when(args);
         }
 
-        function getToken(params, ctx) {
-            ctx = getCTX(ctx);
-            params = arrayCheck(params);
-            return self._timeout(function() {
-                return self._tokenObject[self._tokenMethod].apply(ctx, params);
-            });
-        }
-
-        function arrayCheck(args) {
-            if (!args) {
-                args = [];
-            }
-            if (args && !angular.isArray(args)) {
-                args = [args]
-            }
-
-            return args;
-        }
-
-        function getApi() {
-            return self._api;
-        }
-
-        function getSubscriberParams() {
-            return self._subscriberObject.getOptions()
-        }
-
-        function initializePublisher() {
-            return self._publisherObject.init()
-                .then(function(obj) {
-                    self._publisher = obj;
-                    return self._publisher;
-                }).catch(standardError);
-        }
-
-        function initializeSubscriber(params) {
-            return self._subscriberObject.init(params)
-                .then(function(obj) {
-                    self._subscriber = obj;
-
-                    return self._subscriber;
-                }).catch(standardError);
-        }
 
         function standardError(err) {
             return self._utils.standardError(err);
         }
 
-        return initSession(self._params, getCTX(self._ctx));
+        return initSession(self._sessionId);
 
     }
 
-    OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
     OpenTokSession.prototype.signal = signal;
@@ -209,74 +167,35 @@
      * Commands
      * ***********/
 
-    function connect(str, ctx) {
-        var self = this;
-        if (self._token) {
-            return self._getToken(str, ctx)
-                .then(submitToken)
-                .catch(function(err) {
-                    return self._utils.standardError(err);
-                });
-        }
-        return submitToken(str);
-
-        function submitToken(val) {
-            return self._utils.handler(function(cb) {
-                    self._session.connect(val, cb);
-                })
-                .catch(function(err) {
-                    return self._utils.standardError(err);
-                });
-        }
-    }
 
     function subscribe(stream, targetElem, props) {
         var self = this;
         if (!stream) {
             throw new Error("No stream object provided");
         }
-        if (!targetElem) targetElem = self._subscriberParams().targetElement;
-        if (!props) props = self._subscriberParams().targetProperties;
+        if (!targetElem) targetElem = self._subscriberParams.targetElement;
+        if (!props) props = self._subscriberParams.targetProperties;
 
         return self._utils.handler(function(cb) {
                 return self._session.subscribe(stream, targetElem, props, cb);
             })
-            .then(initializeSubscriber)
             .catch(function(err) {
                 return self._utils.standardError(err);
             });
 
-        function initializeSubscriber(res) {
-            return self._initializeSubscriber(res);
-        }
     }
 
 
 
-    function publish(publisher) {
+    function publish(obj) {
         var self = this;
 
-        // if (angular.isUndefined(publisher)) {
-        //     return initPublisher()
-        //         .then(publishStream)
-        //         .catch(function(err) {
-        //             return self._utils.standardError(err);
-        //         });
-        // }
-        return publishStream(publisher);
-
-        // function initPublisher() {
-        //     return self._initializePublisher()
-        // }
-
-        function publishStream(obj) {
-            return self._utils.handler(function(cb) {
-                    self._session.publish(obj, cb)
-                })
-                .catch(function(err) {
-                    return self._utils.standardError(err);
-                });
-        }
+        return self._utils.handler(function(cb) {
+                self._session.publish(obj._publisher, cb)
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
     }
 
     function signal(data) {

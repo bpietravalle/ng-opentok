@@ -15,6 +15,32 @@
             spyOn($log, "info");
             spyOn($q, "reject")
         });
+
+        describe("findIndex", function() {
+            var arr;
+            beforeEach(function() {
+                arr = [{
+                    id: 1,
+                    name: "bob"
+                }, {
+                    id: 2,
+                    name: "bill"
+                }, {
+                    id: 3,
+                    name: "blah"
+                }];
+            });
+            it("should return correct idx", function() {
+                test = utils.findIndex(arr, 'name', 'blah');
+                expect(test).toEqual(2);
+            });
+            it("should return -1 if record isn't available", function() {
+                test = utils.findIndex(arr, 'id', 4);
+                expect(test).toEqual(-1);
+            });
+
+
+        });
         describe("paramCheck", function() {
             it("should return default if param arg is undefined", function() {
                 test = utils.paramCheck(undefined, "str", "default");

@@ -1,35 +1,41 @@
 {
-    "name": "ng-opentok",
-    "authors": [{
-        "name": "Brian Pietravalle",
-        "email": "bpietravalle@gmail.com"
-    }],
-    "description": "angular wrapper for opentok.js",
-    "main": "dist/scripts/ng-opentok.js",
-    "license": "MIT",
-    "keywords": [
-        "opentok"
-    ],
-    "moduleType": [],
-    "homepage": "",
-    "ignore": [
-        "**/.*",
-        "node_modules",
-        "bower_components",
-				"coverage",
-        "docs",
-        "test",
-        "tests"
-    ],
-    "dependencies": {
-        "angular-uuid-service": "~0.1.0",
-        "angular": "~1.4.4"
-    },
-    "devDependencies": {
-        "angular-mocks": "~1.4.4"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/bpietravalle/ng-opentok.git"
+  "name": "ng-opentok",
+  "authors": [
+    {
+      "name": "Brian Pietravalle",
+      "email": "bpietravalle@gmail.com"
     }
+  ],
+  "description": "angular wrapper for opentok.js",
+  "main": "dist/scripts/ng-opentok.js",
+  "license": "MIT",
+  "keywords": [
+    "opentok"
+  ],
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "coverage",
+    "docs",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-uuid-service": "~0.1.0",
+    "angular": "~1.4.4",
+    "ng-lodash": "~0.4.0"
+  },
+  "devDependencies": {
+    "angular-mocks": "~1.4.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bpietravalle/ng-opentok.git"
+  },
+  "resolutions": {
+    "angular": "~1.4.4"
+  }
 }

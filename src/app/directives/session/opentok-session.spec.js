@@ -80,7 +80,7 @@
             iscope = elem.isolateScope();
             child = iscope.$new();
             spy = jasmine.createSpy('spy');
-            child.$on('sessionReady', spy);
+            iscope.$on('sessionReady', spy);
             ctrl = elem.controller('opentokSession');
         });
         afterEach(function() {

@@ -1,7 +1,7 @@
 (function() {
     'use strict';
-    describe('Streams Factory', function() {
-        var rs, subject, subMock, test;
+    describe('Child Model', function() {
+        var subject, subMock, test;
 
         beforeEach(function() {
             subMock = {};
@@ -15,9 +15,8 @@
                 });
             });
 
-            inject(function(_$rootScope_, _otStreams_) {
+            inject(function(_otStreams_) {
                 subject = _otStreams_;
-                rs = _$rootScope_;
             });
             test = subject();
         });

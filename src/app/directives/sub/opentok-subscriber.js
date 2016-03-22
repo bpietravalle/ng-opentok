@@ -18,18 +18,15 @@
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
                 var stream = scope.stream;
-                // if (ctrl.isConnected()) {
+                scope.$on('sessionReady', subscribe)
 
-                // scope.$on('sessionReady', subscribe)
-
-                // function subscribe() {
+                function subscribe() {
                     scope.subscriber = ctrl.subscribe(stream, element[0]);
+                    eventSetter(scope, 'subscriber');
                     $log.info("We streamin");
                     $log.info(scope.subscriber);
-                // }
+                }
 
-                // }
-                eventSetter(scope, 'subscriber');
                 scope.$on('$destroy', destroy);
 
                 function destroy() {

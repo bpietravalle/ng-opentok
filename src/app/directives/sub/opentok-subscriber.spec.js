@@ -65,7 +65,7 @@
             scope.myEvents2 = {};
             elem = angular.element("<opentok-session><opentok-subscriber onEvents='myEvents1' " +
                 "onceEvents='myEvents2' props='targetProperties' stream='stream'></opentok-subscriber></opentok-session>");
-						elem.data({
+            elem.data({
                 '$opentokSessionController': sessionCtrl
             });
             compiledElem(elem, scope);
@@ -86,18 +86,19 @@
         it("should compile correctly", function() {
             expect(elem.html()).toBeDefined();
         });
-        describe("Initialization", function() {
-            it("should call init on subscriber with element and properties object", function() {
-                var ctrl = sessionCtrl;
-                parent.$broadcast('sessionReady');
-                expect(ctrl.subscribe.calls.argsFor(0)[1].localName).toEqual("opentok-subscriber");
-            });
-            it("should call 'eventSetter' with scope and 'subscriber'", function() {
-                expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
-                expect(es.calls.argsFor(0)[0].subscriber).toEqual(subSpy);
-            });
-        });
         describe('Scope Events', function() {
+            describe("sessionReady", function() {
+                it("should call init on subscriber with element and properties object", function() {
+                    var ctrl = sessionCtrl;
+                    parent.$broadcast('sessionReady');
+                    expect(ctrl.subscribe.calls.argsFor(0)[1].localName).toEqual("opentok-subscriber");
+                });
+                it("should call 'eventSetter' with scope and 'subscriber'", function() {
+                    parent.$broadcast('sessionReady');
+                    expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
+                    expect(es.calls.argsFor(0)[0].subscriber).toEqual(subSpy);
+                });
+            });
             describe('On destroy', function() {
                 describe('when local', function() {
                     beforeEach(function() {

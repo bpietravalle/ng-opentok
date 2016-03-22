@@ -7,11 +7,13 @@
 
 
     /** @ngInject */
-    function otUtilsFactory($log, $q) {
+    function otUtilsFactory($log, $q, lodash) {
 
         var utils = {
             handler: handler,
             defer: defer,
+            findIndex: findIndex,
+            keys: keys,
             paramCheck: paramCheck,
             qWrap: qWrap,
             qAll: qAll,
@@ -68,6 +70,12 @@
             }
         }
 
+        function findIndex(obj, prop, val) {
+            return lodash.findIndex(obj, function(item) {
+                return item[prop] === val;
+            });
+        }
+
         function invalidType(type) {
             throw new Error("Invalid parameter type at: " + type);
         }
@@ -75,6 +83,10 @@
         function hashCheck(hash) {
             //TODO: iterate over keys and check for and remove unknowns
             return hash;
+        }
+
+        function keys(obj) {
+            return Object.keys(obj);
         }
 
         function handler(fn, ctx) {
