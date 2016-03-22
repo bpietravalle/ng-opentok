@@ -553,15 +553,15 @@
                             }, jasmine.any(Function));
                         });
                     });
-                    describe("Without passing args", function() {
-                        it("should pass publisher obj from Api to session.publish", function() {
-                            test = subject.publish();
-                            rs.$digest();
-                            expect(spy.publish).toHaveBeenCalledWith({
-                                publisher: 'object'
-                            }, jasmine.any(Function));
-                        });
-                    });
+                    // describe("Without passing args", function() {
+                    //     it("should pass publisher obj from Api to session.publish", function() {
+                    //         test = subject.publish();
+                    //         rs.$digest();
+                    //         expect(spy.publish).toHaveBeenCalledWith({
+                    //             publisher: 'object'
+                    //         }, jasmine.any(Function));
+                    //     });
+                    // });
                 });
             });
         });

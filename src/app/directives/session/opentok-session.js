@@ -23,13 +23,8 @@
 
         function linkFn(scope) {
 
-            // otSessionModel(scope.id)
-            //     .then(function(res) {
-            // scope.session.connect(scope.token)
-            //     .then(function() {
             eventSetter(scope, 'session');
             scope.$broadcast('sessionReady');
-            // }).catch(standardError);
 
             scope.$on('$destroy', destroy);
 

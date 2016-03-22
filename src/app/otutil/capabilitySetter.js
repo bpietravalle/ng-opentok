@@ -1,6 +1,8 @@
 (function() {
     'use strict';
 
+    //currently unused
+   
     /** @ngInject */
     function capabilitySetterFactory($q) {
         return function(obj) {

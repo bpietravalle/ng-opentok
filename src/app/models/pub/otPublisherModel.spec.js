@@ -26,25 +26,6 @@
             ApiSpy = null;
         });
         describe("getOptions", function() {
-            describe("With Defaults", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.publisher');
-                    inject(function(_otPublisherModel_) {
-                        subject = _otPublisherModel_.getOptions()
-                    });
-                });
-                afterEach(function() {
-                    subject = null;
-                });
-                it("should return params", function() {
-
-                    expect(subject.targetElement).toEqual("PublisherContainer");
-                    expect(subject.targetProperties).toEqual({
-                        height: 300,
-                        width: 400
-                    });
-                });
-            });
             describe("With Configured", function() {
                 beforeEach(function() {
                     module('ngOpenTok.models.publisher', function(otPublisherModelProvider) {
@@ -136,31 +117,6 @@
                     expect(ApiSpy.initPublisher.calls.argsFor(0)[1]).toEqual({
                         veryDifferent: "props"
                     });
-                });
-            });
-        });
-        describe("Default configuration", function() {
-            beforeEach(function() {
-                module('ngOpenTok.models.publisher', function($provide) {
-                    $provide.factory('OTApi', function($q) {
-                        return $q.when(ApiSpy);
-                    });
-                });
-                inject(function(_$rootScope_, _otPublisherModel_) {
-                    subject = _otPublisherModel_;
-                    rs = _$rootScope_;
-                });
-            });
-            afterEach(function() {
-                subject = null;
-            });
-            it("should pass default args to initPublisher", function() {
-                subject.init();
-                rs.$digest();
-                expect(ApiSpy.initPublisher.calls.argsFor(0)[0]).toEqual("PublisherContainer");
-                expect(ApiSpy.initPublisher.calls.argsFor(0)[1]).toEqual({
-                    height: 300,
-                    width: 400
                 });
             });
         });

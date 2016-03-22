@@ -221,7 +221,6 @@
         return submitToken(str);
 
         function submitToken(val) {
-            self._log.info(self._session);
             return self._utils.handler(function(cb) {
                     self._session.connect(val, cb);
                 })
@@ -236,12 +235,8 @@
         if (!stream) {
             throw new Error("No stream object provided");
         }
-        if (!targetElem) {
-            targetElem = self._subscriberParams().targetElement;
-        }
-        if (!props) {
-            props = self._subscriberParams().targetProperties;
-        }
+        if (!targetElem) targetElem = self._subscriberParams().targetElement;
+        if (!props) props = self._subscriberParams().targetProperties;
 
         return self._utils.handler(function(cb) {
                 return self._session.subscribe(stream, targetElem, props, cb);
@@ -261,18 +256,18 @@
     function publish(publisher) {
         var self = this;
 
-        if (angular.isUndefined(publisher)) {
-            return initPublisher()
-                .then(publishStream)
-                .catch(function(err) {
-                    return self._utils.standardError(err);
-                });
-        }
+        // if (angular.isUndefined(publisher)) {
+        //     return initPublisher()
+        //         .then(publishStream)
+        //         .catch(function(err) {
+        //             return self._utils.standardError(err);
+        //         });
+        // }
         return publishStream(publisher);
 
-        function initPublisher() {
-            return self._initializePublisher()
-        }
+        // function initPublisher() {
+        //     return self._initializePublisher()
+        // }
 
         function publishStream(obj) {
             return self._utils.handler(function(cb) {

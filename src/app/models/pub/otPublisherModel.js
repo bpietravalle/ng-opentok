@@ -5,15 +5,18 @@
         .provider('otPublisherModel', OpenTokPublisherProvider);
 
     function OpenTokPublisherProvider() {
-        var pv = this,
-            defaultElem = 'PublisherContainer',
-            defaultProp = {
-                height: 300,
-                width: 400
-            };
+        var pv = this;
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
+
+        /**
+         * @param{Object} opts
+         * @param{Object|String} opts.targetElement Element or dom id
+         * @param{Object} opts.targetProperties initial styling of element
+         * @summary - these settings are optional - you can pass the arguments at
+         * runtime as well
+         */
 
         function configure(opts) {
             angular.extend(pv._options, opts);
@@ -22,8 +25,6 @@
         /** @ngInject */
         function main($q, $timeout, OTApi, otutil, $log) {
             var options = pv._options;
-            options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
-            options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
 
             return {
                 init: init,

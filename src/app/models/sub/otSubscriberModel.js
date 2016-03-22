@@ -5,15 +5,17 @@
         .provider('otSubscriberModel', OpenTokSubscriberProvider);
 
     function OpenTokSubscriberProvider() {
-        var pv = this,
-            defaultElem = 'SubscriberContainer',
-            defaultProp = {
-                height: 300,
-                width: 400
-            };
+        var pv = this;
         pv.$get = main;
         pv._options = {};
         pv.configure = configure;
+
+        /**
+         * @param{Object} opts
+         * @param{Object|String} opts.targetElement Element or dom id
+         * @param{Object} opts.targetProperties initial styling of element
+         * @summary - currently these must be set here - no opportunity to pass at runtime
+         */
 
         function configure(opts) {
             angular.extend(pv._options, opts);
@@ -22,8 +24,6 @@
         /** @ngInject */
         function main($q, otutil) {
             var options = pv._options;
-            options.targetElement = otutil.paramCheck(options.targetElement, "str", defaultElem);
-            options.targetProperties = otutil.paramCheck(options.targetProperties, "obj", defaultProp);
 
             return {
                 init: init,
@@ -34,6 +34,7 @@
              * @constructor
              * @param{Object} param - subscriber object returned from session.subscribe
              */
+
             function init(param) {
                 return new OpenTokSubscriber($q, otutil, options, param);
             }

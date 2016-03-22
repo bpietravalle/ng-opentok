@@ -18,25 +18,6 @@
             };
         });
         describe("getOptions", function() {
-            describe("With Defaults", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.subscriber');
-                    inject(function(_otSubscriberModel_) {
-                        subject = _otSubscriberModel_.getOptions()
-                    });
-                });
-                afterEach(function() {
-                    subject = null;
-                });
-                it("should return params", function() {
-
-                    expect(subject.targetElement).toEqual("SubscriberContainer");
-                    expect(subject.targetProperties).toEqual({
-                        height: 300,
-                        width: 400
-                    });
-                });
-            });
             describe("With Configured", function() {
                 beforeEach(function() {
                     module('ngOpenTok.models.subscriber', function(otSubscriberModelProvider) {

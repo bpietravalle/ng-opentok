@@ -4,8 +4,9 @@
     /** @ngInject */
     function eventSetterFactory($q) {
 			//TODO check SDK - some events don't return an obj and will fail
-			//see otutils
-			//this wont work for subscribers bc on,once are cbs
+      //
+      //this service wraps the OT callback in a promise and passes
+      //scope obj in callback as well - maybe will add ctrl as well;
 
         return function(scope, prop) {
             var types = ['on', 'once'];
