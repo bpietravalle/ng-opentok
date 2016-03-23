@@ -19,6 +19,9 @@
             beforeEach(function() {
                 deps = module.value('ngOpenTok.models.subscriber').requires;
             });
+            it("should depend on ngOpenTok.config", function() {
+                expect(hasModule("ngOpenTok.config")).toBeTruthy();
+            });
             it("should depend on ngOpenTok.utils", function() {
                 expect(hasModule("ngOpenTok.utils")).toBeTruthy();
             });

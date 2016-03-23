@@ -2,72 +2,30 @@
     'use strict';
 
     angular.module('ngOpenTok.models.session')
-        .provider('otSessionModel', OpenTokSessionProvider);
-
-    function OpenTokSessionProvider(otSubscriberModelProvider, otPublisherModelProvider) {
-        var pv = this;
-        pv.$get = main;
-        pv._options = {};
-        pv.configure = configure;
-
-        //TODO other options:
-        //autoSubscribe
+        .factory('otSessionModel', otSessionModelFactory)
 
 
+    /** @ngInject */
+    function otSessionModelFactory($q, OTApi, otutil, $log, otConfiguration) {
         /**
-         * @param{Object} opts
-         * @param{Number} opts.apiKey - required
-         * @param{Boolean} [opts.autoConnect] - connect to session on initialization - default === true
-         * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
-         * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
-         * other options see below
+         * @constructor
+         * @param{Object} params
+         * @param{String} params.sessionId
+         * @param{String} params.token
          */
-
-        function configure(opts) {
-            angular.extend(pv._options, opts);
-            if (checkOptions('publisher')) {
-                otPublisherModelProvider.configure(pv._options['publisher']);
-            }
-            if (checkOptions('subscriber')) {
-                otSubscriberModelProvider.configure(pv._options['subscriber']);
-            }
-        }
-
-        function checkOptions(key) {
-            var keys = Object.keys(pv._options)
-            return keys.indexOf(key) !== -1;
-        }
-
-
-        /** @ngInject */
-        function main($q, OTApi, otutil, $log) {
-            /**
-             * @constructor
-             * @param{Object} params
-             * @param{String} params.sessionId
-             * @param{String} params.token
-             */
-            return function(params, options) {
-                if (!options) {
-                    options = {};
-                }
-                options = angular.merge(options, pv._options)
-                if (!options.apiKey) {
-                    throw new Error("Please set apiKey during the config phase of your module");
-                }
-
-                return new OpenTokSession($q, OTApi, otutil, $log, params, options);
-            }
+        return function(params) {
+            return new OpenTokSession($q, OTApi, otutil, $log, otConfiguration, params);
         }
     }
 
 
-    function OpenTokSession(q, api, utils, log, params, options) {
+    function OpenTokSession(q, api, utils, log, config, params) {
         var self = this;
         self._q = q;
         self._api = api;
         self._utils = utils;
         self._log = log;
+        self._options = config.getSession();
         self._params = params || {};
         if (checkParamKeys(self._params, 'sessionId')) {
             throw new Error("SessionId must be defined");
@@ -75,7 +33,6 @@
         if (checkParamKeys(self._params, 'token')) {
             throw new Error("Token must be defined");
         }
-        self._options = self._utils.paramCheck(options, "obj", {});
         self._apiKey = options.apiKey;
         self._sessionId = self._params.sessionId;
         self._token = self._params.token;
@@ -121,18 +78,6 @@
             var keys = self._utils.keys(obj);
             return keys.indexOf(str) === -1;
         }
-
-
-        // function arrayCheck(args) {
-        //     if (!args) {
-        //         args = [];
-        //     }
-        //     if (args && !angular.isArray(args)) {
-        //         args = [args]
-        //     }
-
-        //     return args;
-        // }
 
 
         function connect() {

@@ -22,11 +22,8 @@
             it("should depend on ngOpenTok.utils", function() {
                 expect(hasModule("ngOpenTok.utils")).toBeTruthy();
             });
-            it("should depend on ngOpenTok.models.publisher", function() {
-                expect(hasModule("ngOpenTok.models.publisher")).toBeTruthy();
-            });
-            it("should depend on ngOpenTok.models.subscriber", function() {
-                expect(hasModule("ngOpenTok.models.subscriber")).toBeTruthy();
+            it("should depend on ngOpenTok.config", function() {
+                expect(hasModule("ngOpenTok.config")).toBeTruthy();
             });
             it("should depend on ngOpenTok.OTApi", function() {
                 expect(hasModule("ngOpenTok.OTApi")).toBeTruthy();

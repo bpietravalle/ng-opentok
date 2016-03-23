@@ -25,6 +25,9 @@
             it("should depend on ngOpenTok.OTApi", function() {
                 expect(hasModule("ngOpenTok.OTApi")).toBeTruthy();
             });
+            it("should depend on ngOpenTok.config", function() {
+                expect(hasModule("ngOpenTok.config")).toBeTruthy();
+            });
         });
 
     });
