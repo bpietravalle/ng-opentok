@@ -17,38 +17,17 @@
                 getStats: jasmine.createSpy('getStats')
             };
         });
-        describe("getOptions", function() {
-            describe("With Configured", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.subscriber', function(otSubscriberModelProvider) {
-                        otSubscriberModelProvider.configure({
-                            targetElement: "different",
-                            targetProperties: {
-                                height: 500,
-                                width: 300
-                            }
-                        });
-
-                        inject(function(_otSubscriberModel_) {
-                            subject = _otSubscriberModel_.getOptions()
-                        });
-                    });
-                    afterEach(function() {
-                        subject = null;
-                    });
-                    it("should return preset params", function() {
-                        expect(subject.targetElement).toEqual("different");
-                        expect(subject.targetProperties).toEqual({
-                            height: 500,
-                            width: 300
-                        });
-                    });
-                });
-            });
-        });
         describe("With Valid configuration", function() {
             beforeEach(function(done) {
-                module('ngOpenTok.models.subscriber');
+                module('ngOpenTok.models.subscriber', function($provide) {
+                    $provide.factory('otConfiguration', function() {
+                        return {
+                            getSubscriber: jasmine.createSpy('getSubscriber').and.callFake(function() {
+                                return {}
+                            })
+                        };
+                    });
+                });
                 inject(function(_otSubscriberModel_, _$rootScope_) {
                     rs = _$rootScope_;
                     ot = _otSubscriberModel_;

@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    angular.module('ngOpenTok.config', [])
+    angular.module('ngOpenTok.config', ['ngOpenTok.utils'])
         .provider('otConfiguration', otConfigurationProvider);
 
     function otConfigurationProvider() {
@@ -12,8 +12,9 @@
          * autoPublish
          *
          * @param{Object} opts
-         * @param{Number} opts.apiKey - required
-         * @param{Boolean} [opts.autoConnect] - connect to session on initialization - default === true
+         * @param{Object} opts.session - required
+         * @param{Number} opts.session.apiKey - required
+         * @param{Boolean} [opts.session.autoConnect] - connect to session on initialization - default === true
          * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * other options see below
@@ -30,10 +31,10 @@
 
         self.$get = main;
 
-
         /** @ngInject */
         function main(otutil) {
             var options = self.getOptions();
+            checkConfig(options);
 
             return {
                 getSession: getSession,
@@ -55,15 +56,19 @@
 
             function checkConfig(obj) {
 
-                // otutil.keys(
-
-                // if (!options.apiKey) {
-                // throw new Error("Please set apiKey during the config phase of your module");
-                // }
-
-
-
-
+                obj.session = otutil.paramCheck(obj.session, "obj", {});
+                obj.subscriber = otutil.paramCheck(obj.subscriber, "obj", {});
+                obj.publisher = otutil.paramCheck(obj.publisher, "obj", {});
+                if (obj.apiKey) {
+                    obj.session.apiKey = obj.apiKey;
+                }
+                if (!obj.session.apiKey) {
+                    throw new Error("Please set apiKey during the config phase of your module");
+                }
+                obj.session.autoConnect = otutil.paramCheck(obj.session.autoConnect, 'bool', true);
+                obj.session.autoPublish = otutil.paramCheck(obj.session.autoPublish, 'bool', true);
+                obj.session.autoSubscribe = otutil.paramCheck(obj.session.autoSubscribe, 'bool', true);
+                obj.session.addDefaultEvents = otutil.paramCheck(obj.session.addDefaultEvents, 'bool', true);
             }
 
         }

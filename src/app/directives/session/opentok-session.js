@@ -56,13 +56,10 @@
             vm.isLocal = isLocal;
 
             vm.addPublisher = addPublisher;
-            vm.publish = publish;
             vm.unpublish = unpublish;
-            vm.subscribe = subscribe;
             vm.unsubscribe = unsubscribe;
             vm.forceDisconnect = forceDisconnect;
             vm.forceUnpublish = forceUnpublish;
-            vm.remove = remove;
             vm.signal = signal;
 
 
@@ -86,35 +83,19 @@
                 return getSession().forceUnpublish(p);
             }
 
-            function publish(p) {
-                return getSession().publish(p)
-                    .then(function(res) {
-                        $scope.publishers.push(res);
-                        return res;
-                    }).catch(standardError);
-            }
-
-
-            function remove(type, obj) {
-                var arr = $scope.session[type],
-                    idx = arr.indexOf(obj);
-                if (idx !== -1) {
-                    arr.splice(idx, 1);
-                }
-                $log.info("Object: " + obj + " not found in publishers array");
-            }
-
             function signal(data) {
                 return getSession().signal(data);
             }
 
-            function subscribe(s, t, p) {
-                //should return otsub object
-                return getSession().subscribe(s, t, p);
-            }
+            // function subscribe(s, t, p) {
+            //     return getSession().subscribe(s, t, p);
+            // }
 
             function addPublisher(obj) {
-                getSession().publishers.push(obj);
+                getSession().publisher = obj;
+                if (getSession()._autoPublish) {
+                    getSession.publish();
+                }
             }
 
             function getConnection() {

@@ -2,68 +2,36 @@
     'use strict';
 
     angular.module('ngOpenTok.models.publisher')
-        .provider('otPublisherModel', OpenTokPublisherProvider);
+        .factory('otPublisherModel', otPublisherModelFactory);
 
-    function OpenTokPublisherProvider() {
-        var pv = this;
-        pv.$get = main;
-        pv._options = {};
-        pv.configure = configure;
+    /** @ngInject */
+    function otPublisherModelFactory($q, $timeout, OTApi, otutil, $log, otConfiguration) {
+
+        return {
+            init: init
+        };
 
         /**
-         * @param{Object} opts
-         * @param{Object|String} opts.targetElement Element or dom id
-         * @param{Object} opts.targetProperties initial styling of element
-         * @summary - these settings are optional - you can pass the arguments at
-         * runtime as well
+         * @constructor
+         * @param{String|Object} [targetElement] - DOM id  or element for publisher
+         * @param{Object} [props] - properties of publisher object
+         * @description params should be defined during config phase
          */
 
-        function configure(opts) {
-            angular.extend(pv._options, opts);
+        function init(targetElement, props) {
+            return new OpenTokPublisher($q, $timeout, OTApi, otutil, $log, otConfiguration, targetElement, props);
         }
 
-        /** @ngInject */
-        function main($q, $timeout, OTApi, otutil, $log) {
-            var options = pv._options;
-
-            return {
-                init: init,
-                getOptions: getOptions
-            };
-
-
-            /**
-             * @constructor
-             * @param{String|Object} [targetElement] - DOM id  or element for publisher
-             * @param{Object} [props] - properties of publisher object
-             * @description params should be defined during config phase
-             */
-
-            function init(targetElement, props) {
-                return new OpenTokPublisher($q, $timeout, OTApi, otutil, $log, options, targetElement, props);
-            }
-
-            /**
-             * @summary helper method to share default options with sessionObject
-             */
-
-            function getOptions() {
-                return {
-                    targetElement: options.targetElement,
-                    targetProperties: options.targetProperties
-                };
-            }
-        }
     }
 
-    function OpenTokPublisher(q, timeout, api, utils, log, options, targetElement, props) {
+    function OpenTokPublisher(q, timeout, api, utils, log, config, targetElement, props) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
         self._api = api;
         self._utils = utils;
         self._log = log;
-        self._options = self._utils.paramCheck(options, "obj", {});
+        self._options = config.getPublisher();
         if (angular.isString(targetElement)) {
             self._targetElement = self._utils.paramCheck(targetElement, "str", self._options.targetElement);
         } else {

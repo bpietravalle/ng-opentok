@@ -15,6 +15,22 @@
             spyOn($log, "info");
             spyOn($q, "reject")
         });
+        describe("extend", function() {
+            var source, dest;
+            beforeEach(function() {
+                source = {
+                    first_name: "bob",
+                    getName: function() {
+                        return source.first_name;
+                    }
+                };
+                dest = {};
+            });
+            it("should work", function() {
+                utils.extend(dest, source)
+                expect(dest.getName()).toEqual("bob");
+            });
+        });
 
         describe("findIndex", function() {
             var arr;
@@ -38,8 +54,6 @@
                 test = utils.findIndex(arr, 'id', 4);
                 expect(test).toEqual(-1);
             });
-
-
         });
         describe("paramCheck", function() {
             it("should return default if param arg is undefined", function() {

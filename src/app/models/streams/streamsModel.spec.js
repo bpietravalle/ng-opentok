@@ -1,85 +1,90 @@
 (function() {
     'use strict';
     describe('Streams Factory', function() {
-        var rs, subject, subMock, test;
+        var otSub, to, rs, subject, otStreams, sessionMock, subMock;
 
         beforeEach(function() {
-            subMock = {};
+            subMock = {
+                id: "submockid",
+                name: "submock"
+            }
+            sessionMock = {
+                subscribe: jasmine.createSpy('subscribe').and.callFake(function() {
+                    return subMock;
+                }),
+                id: "session"
+            }
             module('ngOpenTok.models.streams', function($provide) {
                 $provide.factory('otSubscriberModel', function($q) {
                     return {
-                        init: jasmine.createSpy('init').and.callFake(function() {
-                            return $q.when(subMock);
+                        init: jasmine.createSpy('init').and.callFake(function(arg) {
+                            arg.name = "otSubscriberModel";
+                            return $q.when(arg);
                         })
                     };
                 });
             });
 
-            inject(function(_$rootScope_, _otStreams_) {
-                subject = _otStreams_;
-                rs = _$rootScope_;
+            inject(function(_otSubscriberModel_, $timeout, $rootScope, _otStreams_) {
+                otStreams = _otStreams_;
+                otSub = _otSubscriberModel_;
+                rs = $rootScope;
+                to = $timeout;
             });
-            test = subject();
+            subject = otStreams(sessionMock);
+            subject.add({
+                streamId: "key1",
+                name: "a"
+            });
+            subject.add({
+                streamId: "key2",
+                name: "b"
+            });
+            to.flush();
+
         });
         afterEach(function() {
             subject = null;
         });
         it('should be defined', function() {
             expect(subject).toBeDefined();
+            expect(subject.subscribe).toBeDefined();
         });
-        describe('getAll', function() {
-            it('should return an array', function() {
-                expect(test.getAll()).toBeAn('array');
-            });
-        });
-        describe('add', function() {
-            it('should use streamId property', function() {
-                test.add({
-                    stream: "obj",
-                    streamId: "string"
-                })
-                expect(test.getAll()).toHaveLength(1)
-                expect(test.getAll()[0].id).toEqual('string');
-            });
-        });
-        describe('get', function() {
+        describe("subscribe", function() {
             beforeEach(function() {
-                test.add({
-                    streamId: "key1",
-                    name: "a"
-                });
-                test.add({
-                    streamId: "key2",
-                    name: "b"
-                });
-                test.add({
-                    streamId: "key3",
-                    name: "c"
-                })
+                subject.subscribe('key1');
+                rs.$digest();
             });
-            describe("On Success", function() {
-                it('should return "_child" property of correct obj', function() {
-
-                    expect(test.getStream("key2")).toEqual({
-                        streamId: "key2",
-                        name: "b"
-                    });
-
+            it("should call session.subscribe with stream object", function() {
+                expect(sessionMock.subscribe).toHaveBeenCalledWith({
+                    streamId: 'key1',
+                    name: 'a'
                 });
             });
-            describe("On Failure", function() {
-                it('should throw error', function() {
-                    expect(function() {
-                        expect(test.getStream("key4")).toEqual({
-                            name: "b"
-                        });
-                    }).toThrow();
-                });
+            it("should call subscriber.init with sub obj returned from session", function() {
+                expect(otSub.init).toHaveBeenCalledWith(subMock);
             });
-
+            it("should add subscriber obj to record", function() {
+                var rec = subject.getRecord('key1');
+                expect(rec.subscriber).toEqual(subMock);
+                expect(rec.subscriber.name).toEqual('otSubscriberModel');
+            });
         });
-
-
+        describe("getStream", function() {
+            it("should return record's 'main' property", function() {
+                expect(subject.getStream('key1')).toEqual({
+                    streamId: 'key1',
+                    name: 'a'
+                });
+            });
+        });
+        describe("getSubscriber", function() {
+            it("should return record's 'manager' property", function() {
+                subject.subscribe('key1');
+                rs.$digest();
+                expect(subject.getSubscriber('key1')).toEqual(subMock);
+            });
+        });
     });
 
 })();

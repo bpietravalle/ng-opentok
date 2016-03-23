@@ -2,7 +2,7 @@
     'use strict';
 
     describe("opentokSession Directive", function() {
-        var $q, spy, child, $compile, ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
+        var $q, spy, $compile, ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
 
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
@@ -78,7 +78,6 @@
             $compile(elem)(scope);
             scope.$digest();
             iscope = elem.isolateScope();
-            child = iscope.$new();
             spy = jasmine.createSpy('spy');
             iscope.$on('sessionReady', spy);
             ctrl = elem.controller('opentokSession');
@@ -140,9 +139,9 @@
                 expect(ctrl).toBeDefined();
             });
             var ctrlMeths = [
-                ['publish', ['pubSpy']],
-                ['subscribe', ['stream', 'element', 'props']],
-                ['unpublish', ['pub']],
+                // ['publish', ['pubSpy']],
+                // ['subscribe', ['stream', 'element', 'props']],
+                // ['unpublish', ['pub']],
                 ['unsubscribe', ['stream']],
                 ['forceUnpublish', ['stream']],
                 ['forceDisconnect', ['connection']],
@@ -177,12 +176,14 @@
                 });
             });
             describe('addPublisher', function() {
-                it('should add item to publishers array', function() {
-                    expect(iscope.session.publishers).toHaveLength(0);
+                it('should set "publisher" property of session', function() {
+                    expect(iscope.session.publisher).not.toBeDefined();
                     ctrl.addPublisher({
                         publisher: "obj"
                     });
-                    expect(iscope.session.publishers).toHaveLength(1);
+                    expect(iscope.session.publisher).toEqual({
+                        publisher: "obj"
+                    });
                 });
             });
 

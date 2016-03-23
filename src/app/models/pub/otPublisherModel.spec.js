@@ -1,8 +1,15 @@
 (function() {
     'use strict';
     describe('otPublisherModel', function() {
-        var subject, rs, ApiSpy;
+        var subject, publisherConfigMock, rs, ApiSpy;
         beforeEach(function() {
+            publisherConfigMock = {
+                targetElement: 'PublisherContainer',
+                targetProperties: {
+                    height: 300,
+                    width: 400
+                }
+            };
             ApiSpy = {
                 initPublisher: jasmine.createSpy('initPublisher').and.callFake(function() {
                     return {
@@ -25,47 +32,23 @@
             subject = null;
             ApiSpy = null;
         });
-        describe("getOptions", function() {
-            describe("With Configured", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.publisher', function(otPublisherModelProvider) {
-                        otPublisherModelProvider.configure({
-                            targetElement: "different",
-                            targetProperties: {
-                                height: 500,
-                                width: 300
-                            }
-                        });
-
-                        inject(function(_otPublisherModel_) {
-                            subject = _otPublisherModel_.getOptions()
-                        });
-                    });
-                    afterEach(function() {
-                        subject = null;
-                    });
-                    it("should return preset params", function() {
-                        expect(subject.targetElement).toEqual("different");
-                        expect(subject.targetProperties).toEqual({
-                            height: 500,
-                            width: 300
-                        });
-                    });
-                });
-            });
-        });
 
         describe("Configured Setup - in module's config phase", function() {
             beforeEach(function() {
-                module('ngOpenTok.models.publisher', function($provide, otPublisherModelProvider) {
+                module('ngOpenTok.models.publisher', function($provide) {
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });
-                    otPublisherModelProvider.configure({
-                        targetElement: "different",
-                        targetProperties: {
-                            different: "props"
-                        }
+                    $provide.factory('otConfiguration', function() {
+                        return {
+                            getPublisher: jasmine.createSpy('getPublisher').and.callFake(function() {
+                                publisherConfigMock.targetElement = "different";
+                                publisherConfigMock.targetProperties = {
+                                    different: "props"
+                                };
+                                return publisherConfigMock;
+                            })
+                        };
                     });
                 });
                 inject(function(_$rootScope_, _otPublisherModel_) {
@@ -123,6 +106,13 @@
         describe("With Valid configuration", function() {
             beforeEach(function() {
                 module('ngOpenTok.models.publisher', function($provide) {
+                    $provide.factory('otConfiguration', function() {
+                        return {
+                            getPublisher: jasmine.createSpy('getPublisher').and.callFake(function() {
+                                return publisherConfigMock;
+                            })
+                        };
+                    });
                     $provide.factory('OTApi', function($q) {
                         return $q.when(ApiSpy);
                     });

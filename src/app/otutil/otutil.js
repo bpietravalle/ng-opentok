@@ -12,6 +12,7 @@
         var utils = {
             handler: handler,
             defer: defer,
+            extend: extend,
             findIndex: findIndex,
             keys: keys,
             paramCheck: paramCheck,
@@ -22,6 +23,10 @@
         };
 
         return utils;
+
+        function extend(dest, source) {
+            return lodash.extend(dest, source);
+        }
 
         function paramCheck(param, type, def) {
             switch (angular.isUndefined(param)) {

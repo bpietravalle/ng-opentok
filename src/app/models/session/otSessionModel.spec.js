@@ -1,8 +1,19 @@
 (function() {
     'use strict';
     describe('otSessionModel', function() {
-        var test, spy, otSessionModel, params, rs, subject, $q, ApiSpy;
+        var sessionConfigMock, subscriberConfigMock, test, spy, otSessionModel, params, rs, subject, $q, ApiSpy;
         beforeEach(function() {
+            sessionConfigMock = {
+                apiKey: 12345,
+                autoConnect: true
+            };
+            subscriberConfigMock = {
+                targetElement: 'SubscriberContainer',
+                targetProperties: {
+                    height: 300,
+                    width: 400
+                }
+            };
             params = {
                 sessionId: "sessionKey",
                 token: "tokenKey"
@@ -29,71 +40,63 @@
                 })
             };
         });
-        describe("With invalid configuration", function() {
-            describe("Without apiKey", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.session', function($provide) {
-                        $provide.factory('OTApi', function($q) {
-                            return $q.when(ApiSpy);
-                        });
+        describe("Without correct params", function() {
+            beforeEach(function() {
+                module('ngOpenTok.models.session', function($provide) {
+                    $provide.factory('otConfiguration', function() {
+                        return {
+                            getSession: jasmine.createSpy('getSession').and.callFake(function() {
+                                return sessionConfigMock;
+                            }),
+                            getSubscriber: jasmine.createSpy('getSubscriber').and.callFake(function() {
+                                return subscriberConfigMock;
+                            })
+                        };
                     });
-                    inject(function(_otSessionModel_) {
-                        subject = _otSessionModel_;
+                    $provide.factory('OTApi', function($q) {
+                        return $q.when(ApiSpy);
                     });
                 });
-                afterEach(function() {
-                    subject = null;
-                });
-                it("should throw error if apiKey isn't defined", function() {
-                    expect(function() {
-                        subject();
-                    }).toThrowError("Please set apiKey during the config phase of your module")
+                inject(function(_otSessionModel_, $rootScope) {
+                    subject = _otSessionModel_;
+                    rs = $rootScope;
                 });
             });
-            describe("Without correct params", function() {
-                beforeEach(function() {
-                    module('ngOpenTok.models.session', function($provide, otSessionModelProvider) {
-                        otSessionModelProvider.configure({
-                            apiKey: 12345
+            describe("When token missing", function() {
+                it("should throw error", function() {
+                    expect(function() {
+                        subject({
+                            sessionId: params.sessionId
                         });
-                        $provide.factory('OTApi', function($q) {
-                            return $q.when(ApiSpy);
+                        rs.$digest();
+                    }).toThrow();
+                });
+            });
+            describe("When sessionId missing", function() {
+                it("should throw error", function() {
+                    expect(function() {
+                        subject({
+                            token: params.token
                         });
-                    });
-                    inject(function(_otSessionModel_, $rootScope) {
-                        subject = _otSessionModel_;
-                        rs = $rootScope;
-                    });
-                });
-                describe("When token missing", function() {
-                    it("should throw error", function() {
-                        expect(function() {
-                            subject({
-                                sessionId: params.sessionId
-                            });
-                            rs.$digest();
-                        }).toThrow();
-                    });
-                });
-                describe("When sessionId missing", function() {
-                    it("should throw error", function() {
-                        expect(function() {
-                            subject({
-                                token: params.token
-                            });
-                            rs.$digest();
-                        }).toThrow();
-                    });
+                        rs.$digest();
+                    }).toThrow();
                 });
             });
         });
         describe("Valid Config", function() {
             describe("Without autoConnect", function() {
                 beforeEach(function() {
-                    module('ngOpenTok.models.session', function($provide, otSessionModelProvider) {
-                        otSessionModelProvider.configure({
-                            apiKey: 12345,
-                            autoConnect: false
+                    module('ngOpenTok.models.session', function($provide) {
+                        $provide.factory('otConfiguration', function() {
+                            return {
+                                getSession: jasmine.createSpy('getSession').and.callFake(function() {
+                                    sessionConfigMock.autoConnect = false;
+                                    return sessionConfigMock;
+                                }),
+                                getSubscriber: jasmine.createSpy('getSubscriber').and.callFake(function() {
+                                    return subscriberConfigMock;
+                                })
+                            };
                         });
                         $provide.factory('SessionEvents', function() {
                             return {};
@@ -136,16 +139,16 @@
             });
             describe("With autoConnect", function() {
                 beforeEach(function(done) {
-                    module('ngOpenTok.models.session', function($provide, otSessionModelProvider) {
-                        otSessionModelProvider.configure({
-                            apiKey: 12345,
-                            subscriber: {
-                                targetProperties: {
-                                    height: 300,
-                                    width: 400
-                                },
-                                targetElement: 'SubscriberContainer'
-                            }
+                    module('ngOpenTok.models.session', function($provide) {
+                        $provide.factory('otConfiguration', function() {
+                            return {
+                                getSession: jasmine.createSpy('getSession').and.callFake(function() {
+                                    return sessionConfigMock
+                                }),
+                                getSubscriber: jasmine.createSpy('getSubscriber').and.callFake(function() {
+                                    return subscriberConfigMock;
+                                })
+                            };
                         });
                         $provide.factory('SessionEvents', function() {
                             return {};
@@ -331,18 +334,27 @@
                         beforeEach(function() {
                             spy = subject.inspect('session');
                         });
-                        describe("When passing an object", function() {
-                            it("should pass object to session.publish", function() {
-                                subject.publish({
-                                    _publisher: {
-                                        hi: "I'm a stream"
-                                    }
-                                });
-                                rs.$digest();
-                                expect(spy.publish).toHaveBeenCalledWith({
+                        it("should pass subject.publisher to session.publish", function() {
+                            subject.publisher = {
+                                _publisher: {
                                     hi: "I'm a stream"
-                                }, jasmine.any(Function));
+                                }
+                            }
+                            subject.publish();
+                            rs.$digest();
+                            expect(spy.publish).toHaveBeenCalledWith({
+                                hi: "I'm a stream"
+                            }, jasmine.any(Function));
+                        });
+                        describe("When publisher property is undefined", function() {
+                            it("should throw error", function() {
+                                expect(function() {
+                                    subject.publish();
+                                    rs.$digest();
+                                }).toThrow();
                             });
+
+
                         });
                     });
                 });
