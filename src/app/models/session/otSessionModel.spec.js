@@ -138,7 +138,15 @@
                 });
             });
             describe("With autoConnect", function() {
+                var streamsMock, subMock, otSub;
                 beforeEach(function(done) {
+                    subMock = {
+                        id: "subscriber"
+                    };
+										streamsMock = {
+											addManager: jasmine.createSpy('addManager')
+										};
+
                     module('ngOpenTok.models.session', function($provide) {
                         $provide.factory('otConfiguration', function() {
                             return {
@@ -153,13 +161,26 @@
                         $provide.factory('SessionEvents', function() {
                             return {};
                         });
+                        $provide.factory('otStreams', function() {
+                            return function() {
+                                return streamsMock;
+                            };
+                        });
                         $provide.factory('OTApi', function($q) {
                             return $q.when(ApiSpy);
                         });
+                        $provide.factory('otSubscriberModel', function() {
+                            return {
+                                init: jasmine.createSpy('init').and.callFake(function() {
+                                    return $q.when(subMock);
+                                })
+                            };
+                        });
                     });
-                    inject(function(_$q_, _otSessionModel_, _$rootScope_) {
+                    inject(function(_otSubscriberModel_, _$q_, _otSessionModel_, _$rootScope_) {
                         $q = _$q_;
-                        otSessionModel = _otSessionModel_
+                        otSub = _otSubscriberModel_;
+                        otSessionModel = _otSessionModel_;
                         rs = _$rootScope_;
                     });
                     otSessionModel(params).then(function(res) {
@@ -280,20 +301,35 @@
                     }
                     commands.forEach(testCommands);
                     describe("Subscribe", function() {
-                        var streamSpy;
+                        var streamMock, streams;
                         beforeEach(function() {
                             spyOn($q, 'reject');
-                            streamSpy = jasmine.createSpy('streamSpy');
-                            spy = subject.inspect('session');
+                            streamMock = {
+                                id: "key",
+                                main: {
+                                    main: "obj"
+                                }
+                            };
+                            streams = subject.streams;
+                            // spy = subject.inspect('session');
                         });
-                        it("should pass stream object to session.subscribe", function() {
-                            subject.subscribe(streamSpy);
+                        it("should pass stream.main object to session.subscribe", function() {
+                            subject.subscribe(streamMock);
                             rs.$digest();
-                            expect(spy.subscribe.calls.argsFor(0)[0]).toEqual(streamSpy);
+                            expect(spy.subscribe.calls.argsFor(0)[0]).toEqual(streamMock.main);
+                        });
+                        it("should pass arg to streams.addManager", function() {
+                            subject.subscribe(streamMock).then(function(res){
+                            expect(otSub.init).toHaveBeenCalled();
+                            expect(test).toEqual("as");
+                            expect(streams.addManager).toHaveBeenCalledWith("asd");
+														})
+															
+                            rs.$digest();
                         });
                         describe("When passing args", function() {
                             it("should pass arg to session.subscribe", function() {
-                                subject.subscribe(streamSpy, "target", {
+                                subject.subscribe(streamMock, "target", {
                                     props: "object"
                                 });
                                 rs.$digest();
@@ -303,18 +339,8 @@
                                 });
                                 expect(spy.subscribe.calls.argsFor(0)[3]).toEqual(jasmine.any(Function));
                             });
-                        });
-                        //TODO how passing args!
-                        describe("Without passing args", function() {
-                            it("should pass defaults session.subscribe", function() {
-                                subject.subscribe(streamSpy);
-                                rs.$digest();
-                                // expect(spy.subscribe.calls.argsFor(0)[1]).toEqual("SubscriberContainer");
-                                // expect(spy.subscribe.calls.argsFor(0)[2]).toEqual({
-                                //     height: 300,
-                                //     width: 400
-                                // });
-                                expect(spy.subscribe.calls.argsFor(0)[3]).toEqual(jasmine.any(Function));
+                            it("should pass arg to streams.addManger", function() {
+
                             });
                         });
                         // it("should pass returned subscriber object to subscriber service", function() {
@@ -322,7 +348,7 @@
                         //     spyOn(utils, 'handler').and.returnValue($q.when({
                         //         subscriber: "object"
                         //     }));
-                        //     subject.subscribe(streamSpy);
+                        //     subject.subscribe(streamMock);
                         //     rs.$digest();
                         //     expect(subscriber.init).toHaveBeenCalledWith({
                         //         subscriber: "object"
@@ -357,6 +383,7 @@
 
                         });
                     });
+
                 });
             });
         });

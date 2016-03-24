@@ -21,7 +21,7 @@
 
     StreamsModel.prototype.getSubscriber = getSubscriber;
     StreamsModel.prototype.getStream = getStream;
-    StreamsModel.prototype.subscribe = subscribe;
+    // StreamsModel.prototype.subscribe = subscribe;
 
     function getSubscriber(key) {
         var self = this,
@@ -35,30 +35,21 @@
         return rec.main;
     }
 
-    function subscribe(id) {
-        var self = this,
-            stream = self.getStream(id);
-        self.getSession()
-            .then(function(res) {
-                return res.subscribe(stream)
-            }).then(function(sub) {
-                self._subscriber.init(sub)
-                    .then(function(res) {
-                        self.addManager(id,res);
-                    }).catch(function(err) {
-                        return self._utils.standardError(err);
-                    });
-            });
-
-    }
-
-    // function getSubscriber(obj) {
-    //     if (!prop) prop = "id";
+    // function subscribe(id) {
     //     var self = this,
-    //         record = self.getRecord(val, prop);
-    //     if (record) return record._subscriber;
+    //         stream = self.getStream(id);
+    //     self.getSession()
+    //         .then(function(res) {
+    //             return res.subscribe(stream)
+    //         }).then(function(sub) {
+    //             self._subscriber.init(sub)
+    //                 .then(function(res) {
+    //                     self.addManager(id,res);
+    //                 }).catch(function(err) {
+    //                     return self._utils.standardError(err);
+    //                 });
+    //         });
     // }
-
 
     angular.module('ngOpenTok.models.streams')
         .factory('otStreams', otStreamsFactory);

@@ -6,7 +6,7 @@
 
 
     /** @ngInject */
-    function otSessionModelFactory($q, $timeout, OTApi, otutil, $log, otConfiguration, otStreams) {
+    function otSessionModelFactory($q, otSubscriberModel, $timeout, OTApi, otutil, $log, otConfiguration, otStreams) {
         /**
          * @constructor
          * @param{Object} params
@@ -15,15 +15,16 @@
          * @return{Promise<Object>}
          */
         return function(params) {
-            return new OpenTokSession($q, $timeout, OTApi, otutil, $log, otConfiguration, otStreams, params);
+            return new OpenTokSession($q, otSubscriberModel, $timeout, OTApi, otutil, $log, otConfiguration, otStreams, params);
         }
     }
 
 
-    function OpenTokSession(q, timeout, api, utils, log, config, streams, params) {
+    function OpenTokSession(q, subscriber, timeout, api, utils, log, config, streams, params) {
         var self = this;
         self._q = q;
         self._timeout = timeout;
+				self._subscriber = subscriber;
         self._api = api;
         self._utils = utils;
         self._log = log;
@@ -113,7 +114,7 @@
 
         function eventDefaults() {
             self.on({
-                'sessionDisconnected': function(event) {
+                'sessionDisconnected': function() {
                     self._timeout(function() {
                         self.streams = {};
                         self.connections = {};
@@ -138,7 +139,7 @@
                     self._timeout(function() {
                         self.connections.remove(event.connection);
                     });
-                },
+                }
             })
         }
 
@@ -161,6 +162,7 @@
      * ***********/
 
 
+    //this is a stream from streams - 
     function subscribe(stream, targetElem, props) {
         var self = this;
         if (!stream) {
@@ -170,19 +172,21 @@
         if (!props) props = self._subscriberParams.targetProperties;
 
         return self._utils.handler(function(cb) {
-                return self._session.subscribe(stream, targetElem, props, cb);
-            })
-            .catch(function(err) {
-                return self._utils.standardError(err);
-            });
-
+            return self._session.subscribe(stream.main, targetElem, props, cb);
+        }).then(function(sub) {
+            self._subscriber.init(sub);
+        }).then(function(res) {
+            self.streams.addManager(stream.id, res);
+        }).catch(function(err) {
+            return self._utils.standardError(err);
+        });
     }
 
     function publish() {
         var self = this,
             obj = self.publisher;
         if (!obj._publisher) {
-            throw new Error("Publisher object is still undefined");
+            throw new Error("Publisher object is undefined");
         }
 
         return self._utils.handler(function(cb) {

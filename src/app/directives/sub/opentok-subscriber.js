@@ -2,10 +2,10 @@
     'use strict';
 
     angular.module('ngOpenTok.directives.subscriber')
-        .directive('opentokSubscriber', OpenTokSubscriberDirective);
+        .directive('opentokSubscriber', otSubscriberDirective);
 
     /** @ngInject */
-    function OpenTokSubscriberDirective($q, eventSetter, $log) {
+    function otSubscriberDirective($q, eventSetter, $log) {
 
         return {
             require: '?^^opentokSession',

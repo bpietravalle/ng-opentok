@@ -1,7 +1,7 @@
 (function() {
     'use strict';
     describe('Streams Factory', function() {
-        var otSub, to, rs, subject, otStreams, sessionMock, subMock;
+        var to, rs, subject, otStreams, sessionMock, subMock;
 
         beforeEach(function() {
             subMock = {
@@ -25,9 +25,9 @@
                 });
             });
 
-            inject(function(_otSubscriberModel_, $timeout, $rootScope, _otStreams_) {
+            inject(function($timeout, $rootScope, _otStreams_) {
                 otStreams = _otStreams_;
-                otSub = _otSubscriberModel_;
+                // otSub = _otSubscriberModel_;
                 rs = $rootScope;
                 to = $timeout;
             });
@@ -48,27 +48,6 @@
         });
         it('should be defined', function() {
             expect(subject).toBeDefined();
-            expect(subject.subscribe).toBeDefined();
-        });
-        describe("subscribe", function() {
-            beforeEach(function() {
-                subject.subscribe('key1');
-                rs.$digest();
-            });
-            it("should call session.subscribe with stream object", function() {
-                expect(sessionMock.subscribe).toHaveBeenCalledWith({
-                    streamId: 'key1',
-                    name: 'a'
-                });
-            });
-            it("should call subscriber.init with sub obj returned from session", function() {
-                expect(otSub.init).toHaveBeenCalledWith(subMock);
-            });
-            it("should add subscriber obj to record", function() {
-                var rec = subject.getRecord('key1');
-                expect(rec.subscriber).toEqual(subMock);
-                expect(rec.subscriber.name).toEqual('otSubscriberModel');
-            });
         });
         describe("getStream", function() {
             it("should return record's 'main' property", function() {
@@ -80,7 +59,7 @@
         });
         describe("getSubscriber", function() {
             it("should return record's 'manager' property", function() {
-                subject.subscribe('key1');
+                subject.getRecord('key1').subscriber = subMock;
                 rs.$digest();
                 expect(subject.getSubscriber('key1')).toEqual(subMock);
             });
