@@ -58,15 +58,12 @@
                 unpublish: jasmine.createSpy('unpublish'),
                 isLocal: function() {}
             };
-            scope.targetProperties = {
-                height: 300,
-                width: 400
+            scope.myEvents = {
+                on: {},
+                once: {}
             };
-            scope.myPublisher = {};
-            scope.myEvents1 = {};
-            scope.myEvents2 = {};
-            elem = angular.element("<opentok-session><opentok-publisher onEvents='myEvents1' " +
-                "onceEvents='myEvents2' props='targetProperties' publisher='myPublisher'></opentok-publisher></opentok-session>");
+            elem = angular.element("<opentok-session><opentok-publisher events='myEvents'" +
+                "></opentok-publisher></opentok-session>");
             elem.data({
                 '$opentokSessionController': sessionCtrl
             });
@@ -92,9 +89,21 @@
             it("should call init on publisher with element and properties object", function() {
                 expect(ot.init.calls.argsFor(0)[0].localName).toEqual("opentok-publisher");
             });
-            it("should call 'eventSetter' with scope and 'publisher'", function() {
-                expect(es.calls.argsFor(0)[1]).toEqual('publisher');
-                expect(es.calls.argsFor(0)[0].publisher).toEqual(pubSpy);
+            describe("eventSetter", function() {
+                describe("When scope.events is defined", function() {
+                    it("should call 'eventSetter' with scope and 'publisher'", function() {
+                        expect(es.calls.argsFor(0)[1]).toEqual('publisher');
+                        expect(es.calls.argsFor(0)[0].publisher).toEqual(pubSpy);
+                    });
+                });
+                describe("When scope.events isn't set", function() {
+                    it("should not call eventSetter", function() {
+                        elem = angular.element("<opentok-session><opentok-publisher " +
+                            "props='targetProperties' publisher='myPublisher'></opentok-publisher></opentok-session>");
+                        compiledElem(elem, scope);
+                        expect(es.calls.count()).toEqual(1);
+                    });
+                });
             });
         });
         describe('Scope Events', function() {
@@ -108,9 +117,9 @@
                     it('should call ctrl.unpublish', function() {
                         expect(sessionCtrl.unpublish).toHaveBeenCalledWith(pubSpy);
                     });
-                    it('should not call publisher.destroy', function() {
-                        expect(pubSpy.destroy).not.toHaveBeenCalled();
-                    });
+                    // it('should not call publisher.destroy', function() {
+                    //     expect(pubSpy.destroy).not.toHaveBeenCalled();
+                    // });
                 });
                 describe('when not local', function() {
                     beforeEach(function() {
@@ -119,9 +128,9 @@
                         scope.$broadcast('$destroy');
                         rs.$digest();
                     });
-                    it('should not call ctrl.unpublisher', function() {
-                        expect(sessionCtrl.unpublish).not.toHaveBeenCalled();
-                    });
+                    // it('should not call ctrl.unpublisher', function() {
+                    //     expect(sessionCtrl.unpublish).not.toHaveBeenCalled();
+                    // });
                     it('should call publisher.destroy', function() {
                         expect(pubSpy.destroy).toHaveBeenCalled();
                     });

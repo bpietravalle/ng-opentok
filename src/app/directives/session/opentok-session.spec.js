@@ -38,6 +38,9 @@
             }
             sessionSpy = {
                 autoSubscribe: true,
+                streams: {
+                    id: "streamsObj"
+                },
                 connection: {
                     connectionId: "string",
                     data: "data",
@@ -54,7 +57,10 @@
                 unpublish: promiseWrap('unpublish'),
                 publish: promiseWrap('publish'),
                 signal: promiseWrap('subscribe'),
-                publishers: [],
+                publisher: {},
+                connections: {
+                    id: "connections"
+                },
                 unsubscribe: promiseWrap('unsubscribe'),
                 subscribe: promiseWrap('subscribe', {
                     element: "subscriberElement",
@@ -63,19 +69,22 @@
                 forceUnpublish: promiseWrap('forceUnpublish'),
                 forceDisconnect: promiseWrap('forceDisconnect')
             };
-            scope.mySession = sessionSpy;
-            scope.token = "heresTheToken";
-            scope.pcontainer = "heresTheContainer"
-            scope.mySessionOnEvents = {
-                'event1': handler,
-                'event2': handler
+            scope.myAuth = {
+                token: "heresTheToken",
+                sessionId: 'heresTheSessionId'
             };
-            scope.mySessionOnceEvents = {
-                'event3': handler
+            scope.myEvents = {
+                on: {
+                    'event1': handler,
+                    'event2': handler
+                },
+                once: {
+                    'event3': handler
+                }
             };
-            elem = angular.element("<opentok-session publishers='myPublishers' " +
-                "token='token' once-events='mySessionOnceEvents' id='mySessionId' " +
-                "session='mySession' on-events='mySessionOnEvents'></opentok-session>");
+            elem = angular.element("<opentok-session auth='myAuth' " +
+                "events='myEvents'" +
+                "></opentok-session>");
             $compile(elem)(scope);
             scope.$digest();
             iscope = elem.isolateScope();
@@ -98,40 +107,37 @@
         describe("Scope", function() {
             it("should have session object", function() {
                 expect(iscope.session).toBeDefined();
-            });
-            it("should have onEvents object", function() {
-                expect(iscope.onEvents).toBeDefined();
-            });
-            it("should have onceEvents object", function() {
-                expect(iscope.onceEvents).toBeDefined();
-            });
-            // it("should check if 
-        });
-        describe('initializing session', function() {
-            it("should set session object to sessionSpy", function() {
-                rs.$digest();
                 expect(iscope.session).toEqual(sessionSpy);
             });
-            // it("session object should call connect with token", function() {
-            //     rs.$digest();
-            //     expect(iscope.session.connect).toHaveBeenCalled();
-            //     var t = iscope.session.connect.calls.argsFor(0)[0];
-            //     expect(t).toEqual('heresTheToken');
-            // });
-            it("should call eventSetter with scope and 'session'", function() {
-                expect(es.calls.argsFor(0)[1]).toEqual('session');
-                expect(es.calls.argsFor(0)[0].id).toEqual(scope.mySessionId);
+            it("should have publisher object", function() {
+                expect(iscope.publisher).toEqual(sessionSpy.publisher);
             });
-            it("should broadcast 'sessionReady' message", function() {
-                // elem = angular.element("<opentok-session publishers='myPublishers' " +
-                //     "token='token' once-events='mySessionOnceEvents' id='mySessionId' " +
-                //     "session='mySession' on-events='mySessionOnEvents'></opentok-session>");
-                // $compile(elem)(scope);
-                // scope.$digest();
-                // iscope = elem.isolateScope();
-                rs.$digest();
-                // iscope.$digest();
-                // expect(spy).toHaveBeenCalled();
+            it("should have connections object", function() {
+                expect(iscope.connections).toEqual(sessionSpy.connections);
+            });
+            it("should have streams object", function() {
+                expect(iscope.streams).toEqual(sessionSpy.streams);
+            });
+            it("should have events object", function() {
+                expect(iscope.events).toBeDefined();
+            });
+            describe("eventSetter", function() {
+                describe("When scope.events is defined", function() {
+                    it("should call eventSetter with scope and 'session'", function() {
+                        expect(es.calls.argsFor(0)[1]).toEqual('session');
+                        expect(es.calls.argsFor(0)[0].id).toEqual(scope.mySessionId);
+                    });
+                });
+                describe("When scope.events isn't set", function() {
+                    it("should not call eventSetter", function() {
+                        elem = angular.element("<opentok-session auth='myAuth' " +
+                            "></opentok-session>");
+                        $compile(elem)(scope);
+                        scope.$digest();
+                        expect(es.calls.count()).toEqual(1);
+
+                    });
+                });
             });
         });
         describe("Controller", function() {
@@ -140,6 +146,9 @@
             });
             it("should take 'autoSubscribe' prop from session obj", function() {
                 expect(ctrl.autoSubscribe()).toEqual(sessionSpy.autoSubscribe);
+            });
+            it("getStreams() should return'streams' prop from session obj", function() {
+                expect(ctrl.getStreams()).toEqual(sessionSpy.streams);
             });
 
             var ctrlMeths = [
@@ -181,7 +190,7 @@
             });
             describe('addPublisher', function() {
                 it('should set "publisher" property of session', function() {
-                    expect(iscope.session.publisher).not.toBeDefined();
+                    expect(iscope.session.publisher).toEqual({});
                     ctrl.addPublisher({
                         publisher: "obj"
                     });

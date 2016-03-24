@@ -41,7 +41,7 @@
                 script.onload = function() {
                     cb();
 										//untested
-                    script.onload = null;
+                    // script.onload = null;
                 };
                 // TODO IE fix
                 // if (script.readyState === 'loaded' || script.readyState === 'completed') {

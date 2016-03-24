@@ -11,31 +11,41 @@
             restrict: 'E',
             transclude: true,
             scope: {
-                sessionId: '@',
-                onceEvents: '=?',
-                onEvents: '=?',
-                token: '@'
+                session: '=?',
+                auth: '=',
+                events: '=?'
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
-            link: linkFn
+            link: {
+                pre: preLink,
+                post: postLinkFn
+            }
         };
 
-        function linkFn(scope) {
-
-            otSessionModel(scope.sessionId, scope.token)
+        function preLink(scope) {
+            otSessionModel({
+                    sessionId: scope.auth.sessionId,
+                    token: scope.auth.token
+                })
                 .then(setSessionAndEvents)
-                .then(broadcastReady)
                 .catch(standardError);
 
             function setSessionAndEvents(res) {
                 scope.session = res;
-                eventSetter(scope, 'session');
+                scope.streams = scope.session.streams;
+                scope.publisher = scope.session.publisher;
+                scope.connections = scope.session.connections;
             }
 
-            function broadcastReady() {
-                scope.$broadcast('sessionReady');
+        }
+
+        function postLinkFn(scope) {
+            // scope.$broadcast('sessionReady');
+            if (scope.events) {
+                eventSetter(scope, 'session'); //put in post link so can pass ctrl as well
             }
+
 
             scope.$on('$destroy', destroy);
 
@@ -50,11 +60,13 @@
         }
 
         /** @ngInject */
-        function OpenTokSessionController($scope) {
+        function OpenTokSessionController($log, $scope) {
             var vm = this;
+            vm.$onInit = init;
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
             vm.autoSubscribe = autoSubscribe;
+            vm.getStreams = getStreams;
 
             vm.addPublisher = addPublisher;
             vm.unpublish = unpublish;
@@ -65,15 +77,22 @@
             vm.forceUnpublish = forceUnpublish;
             vm.signal = signal;
 
+            function init() {
+                vm.session = $scope.session;
+                $log.info($scope.auth);
+            }
 
             function getSession() {
-                return $scope.session;
+                return vm.session;
             }
 
             function autoSubscribe() {
                 return getSession().autoSubscribe
             }
 
+            function getStreams() {
+                return getSession().streams;
+            }
 
             function publish(p) {
                 return getSession().publish(p);

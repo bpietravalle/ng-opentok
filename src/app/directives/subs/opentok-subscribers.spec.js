@@ -2,10 +2,10 @@
     'use strict';
 
     describe("opentokSubscriber Directive", function() {
-        var parent, $compile, sessionCtrl, rs, sessionSpy, scope, es, elem, subSpy;
+        var parent, $compile, sessionCtrl, rs, sessionSpy, scope, elem, subSpy;
 
         beforeEach(function() {
-            module('ngOpenTok.directives.subscriber', function($provide) {
+            module('ngOpenTok.directives.subscribers', function($provide) {
                 $provide.factory('eventSetter', function($q) {
                     return jasmine.createSpy('eventSetter').and.callFake(function() {
                         return $q.when({});
@@ -36,17 +36,14 @@
                     };
                 });
             });
-            inject(function(_$compile_, _eventSetter_, _$rootScope_) {
-                es = _eventSetter_;
+            inject(function(_$compile_, _$rootScope_) {
                 $compile = _$compile_;
                 rs = _$rootScope_;
                 parent = rs.$new();
                 scope = parent.$new();
             });
             sessionCtrl = {
-                getSession: function() {
-                    return sessionSpy;
-                },
+                getStreams: jasmine.createSpy('getStreams'),
                 subscribe: jasmine.createSpy('subscribe'),
                 unsubscribe: jasmine.createSpy('unsubscribe'),
                 isConnected: function() {
@@ -61,12 +58,10 @@
             scope.stream = {
                 "stream": "obj"
             };
-            scope.myEvents = {
-                on: {},
-                once: {}
-            };
-            elem = angular.element("<opentok-session><opentok-subscriber events='myEvents' " +
-                "props='targetProperties' stream='stream'></opentok-subscriber></opentok-session>");
+            scope.myEvents1 = {};
+            scope.myEvents2 = {};
+            elem = angular.element("<opentok-session><opentok-subscribers on-events='myEvents1' " +
+                "stream='stream'></opentok-subscribers></opentok-session>");
             elem.data({
                 '$opentokSessionController': sessionCtrl
             });
@@ -90,45 +85,30 @@
         });
         describe('Scope Events', function() {
             describe("sessionReady", function() {
-                it("should call init on subscriber with element and properties object", function() {
+                it("should call getStreams", function() {
                     var ctrl = sessionCtrl;
                     parent.$broadcast('sessionReady');
-                    expect(ctrl.subscribe.calls.argsFor(0)[1].localName).toEqual("opentok-subscriber");
+                    expect(ctrl.getStreams).toHaveBeenCalled();
                 });
-                describe("eventSetter", function() {
-                    describe("When scope.events is defined", function() {
-                        it("should call 'eventSetter' with scope and 'subscriber'", function() {
-                            parent.$broadcast('sessionReady');
-                            expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
-                            expect(es.calls.argsFor(0)[0].subscriber).toEqual(subSpy);
-                        });
-                    });
-                    describe("When scope.events isn't set", function() {
-                        it("should not call eventSetter", function() {
-                            elem = angular.element("<opentok-session><opentok-subscriber " +
-                                "props='targetProperties' stream='stream'></opentok-subscriber></opentok-session>");
-                            elem.data({
-                                '$opentokSessionController': sessionCtrl
-                            });
-                            expect(es.calls.count()).toEqual(0);
-
-                        });
-                    });
-                });
+                // it("should call 'eventSetter' with scope and 'subscribers'", function() {
+                //     parent.$broadcast('sessionReady');
+                //     expect(es.calls.argsFor(0)[1]).toEqual('subscribers');
+                //     expect(es.calls.argsFor(0)[0].subscribers).toEqual(subSpy);
+                // });
             });
             describe('On destroy', function() {
-                describe('when local', function() {
-                    beforeEach(function() {
-                        elem = compiledElem(elem, scope);
-                        scope.$broadcast('$destroy');
-                        rs.$digest();
-                    });
-                    it('should call ctrl.unsubscribe', function() {
-                        expect(sessionCtrl.unsubscribe.calls.argsFor(0)[0]).toEqual({
-                            "stream": "obj"
-                        });
-                    });
-                });
+                // describe('when local', function() {
+                //     beforeEach(function() {
+                //         elem = compiledElem(elem, scope);
+                //         scope.$broadcast('$destroy');
+                //         rs.$digest();
+                //     });
+                //     it('should call ctrl.unsubscribe', function() {
+                //         expect(sessionCtrl.unsubscribe.calls.argsFor(0)[0]).toEqual({
+                //             "stream": "obj"
+                //         });
+                //     });
+                // });
 
             });
         });

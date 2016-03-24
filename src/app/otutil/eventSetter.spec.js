@@ -20,7 +20,7 @@
                     return $q.when(obj);
                 });
             }
-            event = jasmine.createSpy('event');
+            event = jasmine.createSpy('event').and.returnValue('eventObj');
             obj = {
                 publisher: {
                     on: promiseWrap('on', event),
@@ -40,29 +40,22 @@
                 rs.$digest();
             });
         });
-        describe("When no events are defined", function() {
-            it("should return undefined", function() {
-                subject(obj, 'publisher').then(function(res) {
-                    expect(res).toBeAn('array');
-                    expect(res.length).toEqual(2);
-                    expect(res[0]).toBeUndefined();
-                    expect(res[1]).toBeUndefined();
-                }, function() {
-                    expect(true).toEqual(false);
-                });
-                rs.$digest();
-            });
-        });
         describe("Adding Events", function() {
-            var test, handler1 = jasmine.createSpy('handler1'),
-                handler2 = jasmine.createSpy('handler2');
+            var test, handler1 = jasmine.createSpy('handler1').and.callFake(function() {
+                    return 'handler1';
+                }),
+                handler2 = jasmine.createSpy('handler2').and.callFake(function() {
+                    return 'handler2';
+                });
             beforeEach(function() {
-                obj.onEvents = {
-                    'event1': handler1
-                };
-                obj.onceEvents = {
-                    'event2': handler2
-                };
+                obj.events = {
+                    on: {
+                        'event1': handler1
+                    },
+                    once: {
+                        'event2': handler2
+                    }
+                }
                 test = subject(obj, 'publisher');
             });
             it("should call 'on' and 'once' with eventName", function() {

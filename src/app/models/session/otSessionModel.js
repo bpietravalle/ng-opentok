@@ -69,6 +69,7 @@
             };
         }
 
+        self._log.info(self);
 
         function initSession(sessionId) {
 

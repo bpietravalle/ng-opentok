@@ -12,8 +12,7 @@
             restrict: 'E',
             scope: {
                 stream: '=',
-                onEvents: '=?',
-                onceEvents: '=?'
+                events: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
@@ -22,7 +21,9 @@
 
                 function subscribe() {
                     scope.subscriber = ctrl.subscribe(stream, element[0]);
-                    eventSetter(scope, 'subscriber');
+                    if (scope.events) {
+                        eventSetter(scope, 'subscriber');
+                    }
                     $log.info("We streamin");
                     $log.info(scope.subscriber);
                 }
