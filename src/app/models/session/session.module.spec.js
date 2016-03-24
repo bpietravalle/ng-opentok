@@ -22,6 +22,12 @@
             it("should depend on ngOpenTok.utils", function() {
                 expect(hasModule("ngOpenTok.utils")).toBeTruthy();
             });
+            it("should depend on ngOpenTok.models.connections", function() {
+                expect(hasModule("ngOpenTok.models.connections")).toBeTruthy();
+            });
+            it("should depend on ngOpenTok.models.streams", function() {
+                expect(hasModule("ngOpenTok.models.streams")).toBeTruthy();
+            });
             it("should depend on ngOpenTok.config", function() {
                 expect(hasModule("ngOpenTok.config")).toBeTruthy();
             });

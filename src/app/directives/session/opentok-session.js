@@ -54,9 +54,12 @@
             var vm = this;
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
+            vm.autoSubscribe = autoSubscribe;
 
             vm.addPublisher = addPublisher;
             vm.unpublish = unpublish;
+            vm.publish = publish;
+            vm.subscribe = subscribe;
             vm.unsubscribe = unsubscribe;
             vm.forceDisconnect = forceDisconnect;
             vm.forceUnpublish = forceUnpublish;
@@ -65,6 +68,15 @@
 
             function getSession() {
                 return $scope.session;
+            }
+
+            function autoSubscribe() {
+                return getSession().autoSubscribe
+            }
+
+
+            function publish(p) {
+                return getSession().publish(p);
             }
 
             function unpublish(p) {
@@ -87,14 +99,14 @@
                 return getSession().signal(data);
             }
 
-            // function subscribe(s, t, p) {
-            //     return getSession().subscribe(s, t, p);
-            // }
+            function subscribe(s, t, p) {
+                return getSession().subscribe(s, t, p);
+            }
 
             function addPublisher(obj) {
                 getSession().publisher = obj;
-                if (getSession()._autoPublish) {
-                    getSession.publish();
+                if (getSession().autoPublish) {
+                    publish(obj);
                 }
             }
 

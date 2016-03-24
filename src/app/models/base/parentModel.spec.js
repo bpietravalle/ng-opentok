@@ -1,19 +1,16 @@
 (function() {
     'use strict';
     describe('Parent Model', function() {
-        var to, test, subject, sessionMock, rs, otParent;
+        var to, subject, rs, otParent;
 
         beforeEach(function() {
-            sessionMock = {
-                session: "obj"
-            };
             module('ngOpenTok.models.base');
             inject(function(_$timeout_, _otParent_, $rootScope) {
                 otParent = _otParent_;
                 to = _$timeout_;
                 rs = $rootScope;
             });
-            subject = otParent(sessionMock, {
+            subject = otParent({
                 id: "streamId",
                 manager: "subscriber"
             });
@@ -41,20 +38,6 @@
             describe("keys", function() {
                 it("should return an array", function() {
                     expect(subject.keys()).toEqual(["key1", "key2", "key3"]);
-                });
-            });
-            describe("getSession", function() {
-                it("should be a promise", function() {
-                    expect(subject.getSession()).toBeAPromise();
-                });
-                it("should resolve to the first argument passed on init", function() {
-                    var val;
-                    subject.getSession()
-                        .then(function(res) {
-                            val = res;
-                        });
-                    rs.$digest();
-                    expect(val).toEqual(sessionMock);
                 });
             });
             describe('getAll', function() {
@@ -163,7 +146,7 @@
 
                 beforeEach(function() {
                     dest = new Person("bob", 55);
-                    test = subject.extend(dest);
+                    subject.extend(dest);
                 });
                 it("should be defined", function() {
                     expect(dest.keys()).toEqual(['key1', 'key2', 'key3']);

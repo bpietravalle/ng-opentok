@@ -55,7 +55,7 @@
                     ['getSession', [
                         ['autoConnect', true],
                         ['autoPublish', true],
-                        ['addDefaultEvents', true],
+                        ['events', false],
                         ['autoSubscribe', true]
                     ]],
                     ['getSubscriber'],
@@ -92,11 +92,25 @@
 
 
                 defaultVals.forEach(defaultTest);
-
-
-
+            });
+            describe("eventsService", function() {
+                it("should name service 'events' by default", function() {
+                    module('ngOpenTok.config', function(otConfigurationProvider) {
+                        otConfigurationProvider.configure({
+                            apiKey: 12345,
+                            session: {
+                                events: true
+                            }
+                        });
+                    });
+                    inject(function(otConfiguration) {
+                        subject = otConfiguration;
+                    });
+                    expect(subject.getSession().eventsService).toEqual("otSessionEvents");
+                });
 
             });
+
         });
     });
 

@@ -6,7 +6,7 @@
 
 
     /** @ngInject */
-    function otSessionModelFactory($q, otSubscriberModel, $timeout, OTApi, otutil, $log, otConfiguration, otStreams) {
+    function otSessionModelFactory($q, $timeout, $injector, OTApi, otutil, $log, otConfiguration, otStreams, otConnections) {
         /**
          * @constructor
          * @param{Object} params
@@ -15,26 +15,37 @@
          * @return{Promise<Object>}
          */
         return function(params) {
-            return new OpenTokSession($q, otSubscriberModel, $timeout, OTApi, otutil, $log, otConfiguration, otStreams, params);
+            return new OpenTokSession($q, $timeout, $injector, OTApi, otutil, $log, otConfiguration, otStreams, otConnections, params)
+                .then(function(res) {
+                    if (res.sessionEvents) {
+                        res.setSessionEvents();
+                    }
+                    return res;
+
+                })
+                .then(function(res) {
+                    if (res.autoConnect) {
+                        res.connect();
+                    }
+                    return res;
+
+                });
         }
     }
 
 
-    function OpenTokSession(q, subscriber, timeout, api, utils, log, config, streams, params) {
+    function OpenTokSession(q, timeout, injector, api, utils, log, config, streams, connections, params) {
         var self = this;
-        self._q = q;
-        self._timeout = timeout;
-				self._subscriber = subscriber;
         self._api = api;
         self._utils = utils;
         self._log = log;
         self._options = config.getSession();
-        self._params = params || {};
+        self._params = angular.extend({}, params);
         if (checkParamKeys(self._params, 'sessionId')) {
-            throw new Error("SessionId must be defined");
+            standardError("SessionId must be defined");
         }
         if (checkParamKeys(self._params, 'token')) {
-            throw new Error("Token must be defined");
+            standardError("Token must be defined");
         }
         self._apiKey = self._options.apiKey;
         self._sessionId = self._params.sessionId;
@@ -42,45 +53,41 @@
         self.autoConnect = self._options.autoConnect;
         self.autoPublish = self._options.autoPublish;
         self.autoSubscribe = self._options.autoSubscribe;
-        self.addDefaultEvents = self._options.addDefaultEvents;
+        self.sessionEvents = self._options.events;
 
-        if (!self.autoConnect) {
-            self.connect = connect;
+        self._subscriberParams = config.getSubscriber();
+        self.connections = connections();
+        self.streams = streams();
+        self.publisher = {};
+
+        if (self.sessionEvents) {
+            self.setSessionEvents = function() {
+                timeout(function() {
+                    var factory = injector.get(self._options.eventsService);
+                    factory.call(self);
+                });
+            };
         }
 
-        self._subscriberParams = config.getSubscriber() || null;
-        self.connections = [];
-        self.streams = streams(self);
-        self.publisher = {};
 
         function initSession(sessionId) {
 
             return self._api
                 .then(setSession)
-                .then(checkConnect)
                 .catch(standardError);
 
             function setSession(res) {
                 var methodsAndPropsToExtend = ['streams', 'connections', 'on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
                 self._session = res.initSession(self._apiKey, sessionId)
                 var keys = self._utils.keys(self._session);
-                self._q.all(keys.map(function(key) {
+                q.all(keys.map(function(key) {
                     if (methodsAndPropsToExtend.indexOf(key) === -1) {
                         self[key] = self._session[key];
                     }
                 }));
-                self.on = on;
-                if (self.addDefaultEvents) {
-                    eventDefaults();
-                }
-            }
-
-            function checkConnect() {
-                if (self.autoConnect) {
-                    connect();
-                }
                 return self;
             }
+
         }
 
         function checkParamKeys(obj, str) {
@@ -89,58 +96,8 @@
         }
 
 
-        function connect() {
-            return self._utils.handler(function(cb) {
-                    self._session.connect(self._token, cb);
-                })
-                .catch(function(err) {
-                    return self._utils.standardError(err);
-                });
-        }
-
-        function on(eventName, ctx) {
-            if (!ctx) {
-                ctx = self._session;
-            }
-            return self._utils.eventHandler(function(cb) {
-                return self._session.on(eventName, cb);
-            }, ctx);
-        }
-
-
         function standardError(err) {
             return self._utils.standardError(err);
-        }
-
-        function eventDefaults() {
-            self.on({
-                'sessionDisconnected': function() {
-                    self._timeout(function() {
-                        self.streams = {};
-                        self.connections = {};
-                    });
-                },
-                'streamDestroyed': function(event) {
-                    self._timeout(function() {
-                        self.streams.remove(event.stream);
-                    });
-                },
-                'streamCreated': function(event) {
-                    self._timeout(function() {
-                        self.streams.add(event.stream);
-                    });
-                },
-                'connectionCreated': function(event) {
-                    self._timeout(function() {
-                        self.connections.add(event.connection);
-                    });
-                },
-                'connectionDestroyed': function(event) {
-                    self._timeout(function() {
-                        self.connections.remove(event.connection);
-                    });
-                }
-            })
         }
 
         return initSession(self._sessionId);
@@ -148,11 +105,13 @@
     }
 
 
+    OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
     OpenTokSession.prototype.signal = signal;
     OpenTokSession.prototype.forceUnpublish = forceUnpublish;
     OpenTokSession.prototype.forceDisconnect = forceDisconnect;
+    OpenTokSession.prototype.on = on;
     OpenTokSession.prototype.once = once;
     OpenTokSession.prototype.inspect = inspect;
 
@@ -162,7 +121,10 @@
      * ***********/
 
 
-    //this is a stream from streams - 
+    /**
+     * @param{Object} stream - child of self.streams
+     */
+
     function subscribe(stream, targetElem, props) {
         var self = this;
         if (!stream) {
@@ -172,25 +134,31 @@
         if (!props) props = self._subscriberParams.targetProperties;
 
         return self._utils.handler(function(cb) {
-            return self._session.subscribe(stream.main, targetElem, props, cb);
-        }).then(function(sub) {
-            self._subscriber.init(sub);
-        }).then(function(res) {
-            self.streams.addManager(stream.id, res);
+            self._session.subscribe(stream.main, targetElem, props, cb);
         }).catch(function(err) {
             return self._utils.standardError(err);
         });
     }
 
-    function publish() {
-        var self = this,
-            obj = self.publisher;
-        if (!obj._publisher) {
-            throw new Error("Publisher object is undefined");
+    function connect() {
+        var self = this;
+        return self._utils.handler(function(cb) {
+                self._session.connect(self._token, cb);
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
+    }
+
+    function publish(obj) {
+        var self = this;
+        if (!obj) {
+            obj = self.publisher._publisher;
+            if (!obj) throw new Error("Publisher is undefined");
         }
 
         return self._utils.handler(function(cb) {
-                self._session.publish(obj._publisher, cb)
+                self._session.publish(obj, cb)
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -198,6 +166,7 @@
     }
 
     function signal(data) {
+        var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
                 session.signal(data, cb);
@@ -208,6 +177,7 @@
     }
 
     function forceUnpublish(stream) {
+        var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
                 session.forceUnpublish(stream, cb);
@@ -218,6 +188,7 @@
     }
 
     function forceDisconnect(connection) {
+        var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
                 session.forceDisconnect(connection, cb);
@@ -231,6 +202,15 @@
     /***************
      * Queries
      * ***********/
+    function on(eventName, ctx) {
+        var self = this;
+        if (!ctx) {
+            ctx = self._session;
+        }
+        return self._utils.eventHandler(function(cb) {
+            return self._session.on(eventName, cb);
+        }, ctx);
+    }
 
 
     function once(eventName, ctx) {

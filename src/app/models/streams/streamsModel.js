@@ -2,18 +2,16 @@
     'use strict';
 
     /** @ngInject */
-    function otStreamsFactory($q, otParent, otSubscriberModel, otutil) {
+    function otStreamsFactory($q, otParent) {
 
-        return function(session) {
-            return new StreamsModel($q, otParent, otSubscriberModel, otutil, session)
+        return function() {
+            return new StreamsModel(otParent)
         };
     }
 
-    function StreamsModel(q, base, subscriber, utils, session) {
+    function StreamsModel(base) {
         var self = this;
-        self._subscriber = subscriber;
-        self._utils = utils;
-        return base(session, {
+        return base({
             id: 'streamId',
             manager: 'subscriber'
         }).extend(self);
@@ -21,7 +19,6 @@
 
     StreamsModel.prototype.getSubscriber = getSubscriber;
     StreamsModel.prototype.getStream = getStream;
-    // StreamsModel.prototype.subscribe = subscribe;
 
     function getSubscriber(key) {
         var self = this,
@@ -34,22 +31,6 @@
             rec = self.getRecord(key);
         return rec.main;
     }
-
-    // function subscribe(id) {
-    //     var self = this,
-    //         stream = self.getStream(id);
-    //     self.getSession()
-    //         .then(function(res) {
-    //             return res.subscribe(stream)
-    //         }).then(function(sub) {
-    //             self._subscriber.init(sub)
-    //                 .then(function(res) {
-    //                     self.addManager(id,res);
-    //                 }).catch(function(err) {
-    //                     return self._utils.standardError(err);
-    //                 });
-    //         });
-    // }
 
     angular.module('ngOpenTok.models.streams')
         .factory('otStreams', otStreamsFactory);

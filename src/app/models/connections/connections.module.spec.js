@@ -1,11 +1,11 @@
 (function() {
     'use strict'
 
-    describe("ngOpenTok.models.streams Module", function() {
+    describe("ngOpenTok.models.connections Module", function() {
         var module;
 
         beforeEach(function() {
-            module = angular.module('ngOpenTok.models.streams');
+            module = angular.module('ngOpenTok.models.connections');
         });
 
         it("should be defined", function() {
@@ -17,7 +17,7 @@
                 return deps.indexOf(m) >= 0;
             };
             beforeEach(function() {
-                deps = module.value('ngOpenTok.models.streams').requires;
+                deps = module.value('ngOpenTok.models.connections').requires;
             });
             it("should depend on ngOpenTok.models.base", function() {
                 expect(hasModule("ngOpenTok.models.base")).toBeTruthy();

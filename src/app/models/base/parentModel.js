@@ -4,12 +4,12 @@
     /** @ngInject */
     function otParentFactory($q, $timeout, otutil) {
 
-        return function(session, options) {
-            return new ParentModel($q, $timeout, otutil, session, options)
+        return function(options) {
+            return new ParentModel($q, $timeout, otutil, options)
         };
     }
 
-    function ParentModel(q, timeout, utils, session, options) {
+    function ParentModel(q, timeout, utils, options) {
         var children = {},
             self = this;
         self._q = q;
@@ -18,10 +18,6 @@
         self._options = options || {};
         self._childKey = self._utils.paramCheck(self._options.id, "str", "id");
         self._manager = self._utils.paramCheck(self._options.manager, "str", "manager");
-        //if controllers are set up shoudn't need this
-        self.getSession = function() {
-            return self._q.when(session);
-        };
         self.getAll = function() {
             return children;
         };

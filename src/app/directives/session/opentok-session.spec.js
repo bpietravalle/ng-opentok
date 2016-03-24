@@ -37,6 +37,7 @@
                 });
             }
             sessionSpy = {
+                autoSubscribe: true,
                 connection: {
                     connectionId: "string",
                     data: "data",
@@ -119,7 +120,6 @@
             // });
             it("should call eventSetter with scope and 'session'", function() {
                 expect(es.calls.argsFor(0)[1]).toEqual('session');
-                // expect(es.calls.argsFor(0)[0].token).toEqual(scope.token);
                 expect(es.calls.argsFor(0)[0].id).toEqual(scope.mySessionId);
             });
             it("should broadcast 'sessionReady' message", function() {
@@ -138,10 +138,14 @@
             it("should be defined", function() {
                 expect(ctrl).toBeDefined();
             });
+            it("should take 'autoSubscribe' prop from session obj", function() {
+                expect(ctrl.autoSubscribe()).toEqual(sessionSpy.autoSubscribe);
+            });
+
             var ctrlMeths = [
-                // ['publish', ['pubSpy']],
-                // ['subscribe', ['stream', 'element', 'props']],
-                // ['unpublish', ['pub']],
+                ['publish', ['pubSpy']],
+                ['subscribe', ['stream', 'element', 'props']],
+                ['unpublish', ['pub']],
                 ['unsubscribe', ['stream']],
                 ['forceUnpublish', ['stream']],
                 ['forceDisconnect', ['connection']],
@@ -185,20 +189,16 @@
                         publisher: "obj"
                     });
                 });
+                describe("When autoPublish===true", function() {
+                    it("should call session.publish", function() {
+                        iscope.session.autoPublish = true;
+                        ctrl.addPublisher({
+                            publisher: "obj"
+                        });
+                        expect(sessionSpy.publish).toHaveBeenCalled();
+                    });
+                });
             });
-
-            // describe('publish', function() {
-            //     it("should add return value to publishers array", function() {
-            //         expect(iscope.publishers).toHaveLength(0);
-            //         var pubMock = {
-            //             publisher: 'obj'
-            //         };
-            //         ctrl.publish(pubMock);
-            //         rs.$digest();
-            //         expect(iscope.publishers).toHaveLength(1);
-            //         expect(iscope.publishers[0]).toEqual(pubMock);
-            //     });
-            // });
             describe('remove', function() {
                 // it("should throw an error if invalid type", function() {
                 //     expect(function() {

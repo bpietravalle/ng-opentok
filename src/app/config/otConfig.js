@@ -68,7 +68,10 @@
                 obj.session.autoConnect = otutil.paramCheck(obj.session.autoConnect, 'bool', true);
                 obj.session.autoPublish = otutil.paramCheck(obj.session.autoPublish, 'bool', true);
                 obj.session.autoSubscribe = otutil.paramCheck(obj.session.autoSubscribe, 'bool', true);
-                obj.session.addDefaultEvents = otutil.paramCheck(obj.session.addDefaultEvents, 'bool', true);
+                obj.session.events = otutil.paramCheck(obj.session.events, 'bool', false);
+                if (obj.session.events) {
+                    obj.session.eventsService = otutil.paramCheck(obj.session.eventsService, 'str', "otSessionEvents");
+                }
             }
 
         }

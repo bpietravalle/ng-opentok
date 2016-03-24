@@ -41,6 +41,7 @@
             };
         });
         describe("Without correct params", function() {
+            var otutil;
             beforeEach(function() {
                 module('ngOpenTok.models.session', function($provide) {
                     $provide.factory('otConfiguration', function() {
@@ -57,34 +58,36 @@
                         return $q.when(ApiSpy);
                     });
                 });
-                inject(function(_otSessionModel_, $rootScope) {
+                inject(function(_otSessionModel_, _otutil_, $rootScope) {
                     subject = _otSessionModel_;
+                    otutil = _otutil_;
                     rs = $rootScope;
                 });
+                spyOn(otutil, 'standardError');
+
             });
             describe("When token missing", function() {
-                it("should throw error", function() {
-                    expect(function() {
-                        subject({
-                            sessionId: params.sessionId
-                        });
-                        rs.$digest();
-                    }).toThrow();
+                it("should call standarderror", function() {
+                    subject({
+                        sessionId: params.sessionId
+                    });
+                    rs.$digest();
+                    expect(otutil.standardError).toHaveBeenCalled();
                 });
             });
             describe("When sessionId missing", function() {
                 it("should throw error", function() {
-                    expect(function() {
-                        subject({
-                            token: params.token
-                        });
-                        rs.$digest();
-                    }).toThrow();
+                    subject({
+                        token: params.token
+                    });
+                    rs.$digest();
+                    rs.$digest();
+                    expect(otutil.standardError).toHaveBeenCalled();
                 });
             });
         });
         describe("Valid Config", function() {
-            describe("Without autoConnect", function() {
+            describe("Without autoConnect or sessionEvents", function() {
                 beforeEach(function() {
                     module('ngOpenTok.models.session', function($provide) {
                         $provide.factory('otConfiguration', function() {
@@ -137,20 +140,23 @@
                     });
                 });
             });
-            describe("With autoConnect", function() {
-                var streamsMock, subMock, otSub;
+            describe("With autoConnect and sessionEvents", function() {
+                var streamsMock, utils, subMock, to, eventsService;
                 beforeEach(function(done) {
                     subMock = {
                         id: "subscriber"
                     };
-										streamsMock = {
-											addManager: jasmine.createSpy('addManager')
-										};
+                    streamsMock = {
+                        addManager: jasmine.createSpy('addManager')
+                    };
 
                     module('ngOpenTok.models.session', function($provide) {
                         $provide.factory('otConfiguration', function() {
                             return {
                                 getSession: jasmine.createSpy('getSession').and.callFake(function() {
+                                    sessionConfigMock.events = true;
+                                    sessionConfigMock.eventsService = "myOTSessionEvents";
+
                                     return sessionConfigMock
                                 }),
                                 getSubscriber: jasmine.createSpy('getSubscriber').and.callFake(function() {
@@ -158,8 +164,8 @@
                                 })
                             };
                         });
-                        $provide.factory('SessionEvents', function() {
-                            return {};
+                        $provide.factory('myOTSessionEvents', function() {
+                            return jasmine.createSpy('eventsService');
                         });
                         $provide.factory('otStreams', function() {
                             return function() {
@@ -177,15 +183,17 @@
                             };
                         });
                     });
-                    inject(function(_otSubscriberModel_, _$q_, _otSessionModel_, _$rootScope_) {
+                    inject(function(_$q_, _myOTSessionEvents_, $timeout, _otSessionModel_, _$rootScope_) {
                         $q = _$q_;
-                        otSub = _otSubscriberModel_;
+                        eventsService = _myOTSessionEvents_;
+                        to = $timeout;
                         otSessionModel = _otSessionModel_;
                         rs = _$rootScope_;
                     });
                     otSessionModel(params).then(function(res) {
                         subject = res;
                         spy = res.inspect('session');
+                        utils = res.inspect('utils');
                     }, function() {
                         expect(1).toEqual(2);
                     });
@@ -198,8 +206,9 @@
                 it("should pass token to session.connect", function() {
                     expect(spy.connect).toHaveBeenCalledWith(params.token, jasmine.any(Function));
                 });
-                it("should not have a 'connect' method", function() {
-                    expect(subject.connect).not.toBeDefined();
+                it("should call the sessionEvents service", function() {
+                    to.flush();
+                    expect(eventsService).toHaveBeenCalled();
                 });
                 describe("inspect", function() {
                     describe("without arguments", function() {
@@ -218,6 +227,15 @@
                     });
                 });
                 describe("properties", function() {
+                    it("should have connections", function() {
+                        var a = subject.connections;
+                        var b = subject.connections;
+                        a.add({
+                            connectionId: "key1"
+                        });
+                        to.flush();
+                        expect(b.getConnection('key1').connectionId).toEqual('key1');
+                    });
                     it("should have connection prop", function() {
                         expect(subject.connection).toEqual({});
                     });
@@ -301,7 +319,7 @@
                     }
                     commands.forEach(testCommands);
                     describe("Subscribe", function() {
-                        var streamMock, streams;
+                        var streamMock;
                         beforeEach(function() {
                             spyOn($q, 'reject');
                             streamMock = {
@@ -310,22 +328,11 @@
                                     main: "obj"
                                 }
                             };
-                            streams = subject.streams;
-                            // spy = subject.inspect('session');
                         });
                         it("should pass stream.main object to session.subscribe", function() {
                             subject.subscribe(streamMock);
                             rs.$digest();
                             expect(spy.subscribe.calls.argsFor(0)[0]).toEqual(streamMock.main);
-                        });
-                        it("should pass arg to streams.addManager", function() {
-                            subject.subscribe(streamMock).then(function(res){
-                            expect(otSub.init).toHaveBeenCalled();
-                            expect(test).toEqual("as");
-                            expect(streams.addManager).toHaveBeenCalledWith("asd");
-														})
-															
-                            rs.$digest();
                         });
                         describe("When passing args", function() {
                             it("should pass arg to session.subscribe", function() {
@@ -339,22 +346,15 @@
                                 });
                                 expect(spy.subscribe.calls.argsFor(0)[3]).toEqual(jasmine.any(Function));
                             });
-                            it("should pass arg to streams.addManger", function() {
-
+                        });
+                        describe("Without passing stream", function() {
+                            it("should throw error", function() {
+                                expect(function() {
+                                    subject.subscribe();
+                                    rs.$digest();
+                                }).toThrow();
                             });
                         });
-                        // it("should pass returned subscriber object to subscriber service", function() {
-                        //     var utils = subject.inspect('utils');
-                        //     spyOn(utils, 'handler').and.returnValue($q.when({
-                        //         subscriber: "object"
-                        //     }));
-                        //     subject.subscribe(streamMock);
-                        //     rs.$digest();
-                        //     expect(subscriber.init).toHaveBeenCalledWith({
-                        //         subscriber: "object"
-                        //     });
-                        //     expect(subject.inspect('subscriber')).toBeDefined();
-                        // });
                     });
                     describe("Publish", function() {
                         beforeEach(function() {
@@ -383,7 +383,31 @@
 
                         });
                     });
+                });
+                describe("errors", function() {
+                    var meths = ['subscribe', 'connect', 'publish', 'signal', 'forceUnpublish', 'forceDisconnect'];
 
+                    function methsTest(y) {
+                        describe(y, function() {
+                            beforeEach(function() {
+                                spyOn(utils, 'standardError');
+                                spyOn(utils, 'handler').and.callFake(function() {
+                                    return $q.reject('ERROR');
+                                });
+                                if (y === 'subscribe' || y === 'publish') {
+                                    subject[y]("stuff");
+                                } else {
+                                    subject[y]();
+                                }
+                                rs.$digest();
+                            });
+                            it("should send error to utils.standardError", function() {
+                                expect(utils.standardError).toHaveBeenCalled();
+                            });
+
+                        });
+                    }
+                    meths.forEach(methsTest);
                 });
             });
         });
