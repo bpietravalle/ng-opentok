@@ -17,31 +17,14 @@
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
+						controllerAs: 'vm',
             link: {
-                pre: preLink,
                 post: postLinkFn
             }
         };
 
-        function preLink(scope) {
-            otSessionModel({
-                    sessionId: scope.auth.sessionId,
-                    token: scope.auth.token
-                })
-                .then(setSessionAndEvents)
-                .catch(standardError);
-
-            function setSessionAndEvents(res) {
-                scope.session = res;
-                scope.streams = scope.session.streams;
-                scope.publisher = scope.session.publisher;
-                scope.connections = scope.session.connections;
-            }
-
-        }
 
         function postLinkFn(scope) {
-            // scope.$broadcast('sessionReady');
             if (scope.events) {
                 eventSetter(scope, 'session'); //put in post link so can pass ctrl as well
             }
@@ -60,9 +43,8 @@
         }
 
         /** @ngInject */
-        function OpenTokSessionController($log, $scope) {
+        function OpenTokSessionController($log, $scope, otSessionModel) {
             var vm = this;
-            vm.$onInit = init;
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
             vm.autoSubscribe = autoSubscribe;
@@ -77,9 +59,24 @@
             vm.forceUnpublish = forceUnpublish;
             vm.signal = signal;
 
+            init();
+
             function init() {
-                vm.session = $scope.session;
-                $log.info($scope.auth);
+                return otSessionModel({
+                        sessionId: $scope.auth.sessionId,
+                        token: $scope.auth.token
+                    })
+                    .then(setSessionAndEvents)
+                    .catch(standardError);
+
+                function setSessionAndEvents(res) {
+                    vm.session = res;
+                    vm.streams = vm.session.streams;
+                    vm.publisher = vm.session.publisher;
+                    vm.connections = vm.session.connections;
+                    $scope.$broadcast('sessionReady');
+                }
+
             }
 
             function getSession() {
@@ -123,7 +120,7 @@
             }
 
             function addPublisher(obj) {
-                getSession().publisher = obj;
+                getSession().publisher = obj
                 if (getSession().autoPublish) {
                     publish(obj);
                 }

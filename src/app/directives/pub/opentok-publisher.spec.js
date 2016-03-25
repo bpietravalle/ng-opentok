@@ -87,11 +87,13 @@
         });
         describe("Initialization", function() {
             it("should call init on publisher with element and properties object", function() {
+                parent.$broadcast('sessionReady');
                 expect(ot.init.calls.argsFor(0)[0].localName).toEqual("opentok-publisher");
             });
             describe("eventSetter", function() {
                 describe("When scope.events is defined", function() {
                     it("should call 'eventSetter' with scope and 'publisher'", function() {
+                        parent.$broadcast('sessionReady');
                         expect(es.calls.argsFor(0)[1]).toEqual('publisher');
                         expect(es.calls.argsFor(0)[0].publisher).toEqual(pubSpy);
                     });
@@ -101,7 +103,7 @@
                         elem = angular.element("<opentok-session><opentok-publisher " +
                             "props='targetProperties' publisher='myPublisher'></opentok-publisher></opentok-session>");
                         compiledElem(elem, scope);
-                        expect(es.calls.count()).toEqual(1);
+                        expect(es.calls.count()).toEqual(0);
                     });
                 });
             });
@@ -114,31 +116,9 @@
                         scope.$broadcast('$destroy');
                         rs.$digest();
                     });
-                    it('should call ctrl.unpublish', function() {
-                        expect(sessionCtrl.unpublish).toHaveBeenCalledWith(pubSpy);
-                    });
-                    // it('should not call publisher.destroy', function() {
-                    //     expect(pubSpy.destroy).not.toHaveBeenCalled();
+                    // it('should call publisher.destroy', function() {
+                    //     expect(pubSpy.destroy).toHaveBeenCalled();
                     // });
-                });
-                describe('when not local', function() {
-                    beforeEach(function() {
-                        elem = compiledElem(elem, scope);
-                        pubSpy.stream = null;
-                        scope.$broadcast('$destroy');
-                        rs.$digest();
-                    });
-                    // it('should not call ctrl.unpublisher', function() {
-                    //     expect(sessionCtrl.unpublish).not.toHaveBeenCalled();
-                    // });
-                    it('should call publisher.destroy', function() {
-                        expect(pubSpy.destroy).toHaveBeenCalled();
-                    });
-                    it('should call ctrl.remove', function() {
-                        var ctrl = sessionCtrl;
-                        expect(ctrl.remove.calls.argsFor(0)[0]).toEqual('publishers');
-                        expect(ctrl.remove.calls.argsFor(0)[1]).toEqual(pubSpy);
-                    });
                 });
             });
             describe("on 'sessionReady'", function() {

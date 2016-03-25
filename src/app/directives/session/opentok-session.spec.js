@@ -105,18 +105,19 @@
             });
         });
         describe("Scope", function() {
+
             it("should have session object", function() {
-                expect(iscope.session).toBeDefined();
-                expect(iscope.session).toEqual(sessionSpy);
+                expect(ctrl.session).toBeDefined();
+                expect(ctrl.session).toEqual(sessionSpy);
             });
             it("should have publisher object", function() {
-                expect(iscope.publisher).toEqual(sessionSpy.publisher);
+                expect(ctrl.publisher).toEqual(sessionSpy.publisher);
             });
             it("should have connections object", function() {
-                expect(iscope.connections).toEqual(sessionSpy.connections);
+                expect(ctrl.connections).toEqual(sessionSpy.connections);
             });
             it("should have streams object", function() {
-                expect(iscope.streams).toEqual(sessionSpy.streams);
+                expect(ctrl.streams).toEqual(sessionSpy.streams);
             });
             it("should have events object", function() {
                 expect(iscope.events).toBeDefined();
@@ -190,17 +191,22 @@
             });
             describe('addPublisher', function() {
                 it('should set "publisher" property of session', function() {
-                    expect(iscope.session.publisher).toEqual({});
+                    expect(ctrl.publisher).toEqual({});
                     ctrl.addPublisher({
                         publisher: "obj"
                     });
-                    expect(iscope.session.publisher).toEqual({
+                    expect(ctrl.session.publisher).toEqual({
                         publisher: "obj"
                     });
                 });
                 describe("When autoPublish===true", function() {
                     it("should call session.publish", function() {
-                        iscope.session.autoPublish = true;
+                        sessionSpy.autoPublish = true;
+                        elem = angular.element("<opentok-session auth='myAuth' " +
+                            "events='myEvents'" +
+                            "></opentok-session>");
+                        $compile(elem)(scope);
+                        scope.$digest();
                         ctrl.addPublisher({
                             publisher: "obj"
                         });

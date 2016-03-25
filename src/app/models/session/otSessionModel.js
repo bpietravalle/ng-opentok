@@ -59,6 +59,11 @@
         self.connections = connections();
         self.streams = streams();
         self.publisher = {};
+        self.setPublisher = function(obj) {
+            timeout(function() {
+                self.publisher = obj;
+            });
+        };
 
         if (self.sessionEvents) {
             self.setSessionEvents = function() {
@@ -68,8 +73,6 @@
                 });
             };
         }
-
-        self._log.info(self);
 
         function initSession(sessionId) {
 
@@ -198,6 +201,7 @@
                 return self._utils.standardError(err);
             });
     }
+
 
 
     /***************

@@ -226,6 +226,16 @@
                         });
                     });
                 });
+                describe('setPublisher', function() {
+                    it("should set the publisher property", function() {
+                        expect(subject.publisher).toEqual({});
+                        subject.setPublisher("pub");
+                        to.flush();
+                        expect(subject.publisher).toEqual("pub");
+
+                    });
+
+                });
                 describe("properties", function() {
                     it("should have connections", function() {
                         var a = subject.connections;

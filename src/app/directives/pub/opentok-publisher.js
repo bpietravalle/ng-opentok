@@ -11,6 +11,7 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
+                publisher: '=?',
                 events: '=?'
             },
             template: "<div class='opentok-publisher'></div>",
@@ -20,9 +21,9 @@
             }
         };
 
-        function preLinkFn(scope, element) {
-            //not sure safe for here
-        }
+        // function preLinkFn(scope, element) {
+        //     //not sure safe for here
+        // }
 
         function postLinkFn(scope, element, a, ctrl) {
             scope.$on('$destroy', destroy);
@@ -30,12 +31,7 @@
             scope.$on('sessionReady', pushPublisher);
 
             function destroy() {
-                if (scope.publisher.stream) {
-                    ctrl.unpublish(scope.publisher);
-                } else {
-                    scope.publisher.destroy();
-                    ctrl.remove('publishers', scope.publisher);
-                }
+                // scope.publisher.destroy();
             }
 
             function pushPublisher() {
