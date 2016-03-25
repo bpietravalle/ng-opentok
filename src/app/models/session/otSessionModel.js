@@ -16,22 +16,14 @@
          */
         return function(params) {
             return new OpenTokSession($q, $timeout, $injector, OTApi, otutil, $log, otConfiguration, otStreams, otConnections, params)
-                .then(function(res) {
-                  //to remove;
-                    if (res.sessionEvents) {
-                        res.setSessionEvents();
-                    }
-                    return res;
-
-                })
-                .then(function(res) {
-                    if (res.autoConnect) {
-                        res.connect();
-                    }
-                    return res;
-                }).catch(function(err) {
-                    return $q.reject(err);
-                });
+                // .then(function(res) {
+                //to remove;
+                // if (res.autoConnect) {
+                //     return res.connect();
+                // }
+                // .catch(function(err) {
+                //     return $q.reject(err);
+                // });
         }
     }
 
@@ -43,54 +35,124 @@
         self._utils = utils;
         self._log = log;
         self._options = config.getSession();
-        self._params = angular.extend({}, params);
-        if (checkParamKeys(self._params, 'sessionId')) {
+        if (checkParamKeys(params, 'sessionId')) {
             standardError("SessionId must be defined");
         }
-        if (checkParamKeys(self._params, 'token')) {
+        if (checkParamKeys(params, 'token')) {
             standardError("Token must be defined");
         }
         self._apiKey = self._options.apiKey;
-        self._sessionId = self._params.sessionId;
-        self._token = self._params.token;
-        self.autoConnect = self._options.autoConnect;
+        // self.autoConnect = self._options.autoConnect;
         self.autoPublish = self._options.autoPublish;
         self.autoSubscribe = self._options.autoSubscribe;
         self.sessionEvents = self._options.events;
+        self.connect = connect;
 
         self._subscriberParams = config.getSubscriber();
         self.connections = connections();
         self.streams = streams();
         self.publisher = {};
-        if (self.sessionEvents) {
-            self.setSessionEvents = function() {
-                self._timeout(function() {
-                    var factory = injector.get(self._options.eventsService);
-                    factory.call(self);
-                });
-            };
+        if (angular.isArray(params.sessionId)) {
+            self._sessionService = self._utils.paramCheck(self._options.sessionService, "str", "media");
+            self._sessionIdMethod = self._utils.paramCheck(self._options.sessionIdMethod, "str", "getSessionId");
+            self._sessionObject = injector.get(self._sessionService);
         }
 
-        function initSession(sessionId) {
 
-            return self._api
+        if (angular.isArray(params.token)) {
+            self._tokenService = self._utils.paramCheck(self._options.tokenService, "str", "participants");
+            self._tokenMethod = self._utils.paramCheck(self._options.tokenMethod, "str", "getToken");
+            self._tokenObject = injector.get(self._tokenService);
+            // self._getToken = getToken;
+        }
+
+        // function getCTX(arg) {
+        //     if (angular.isUndefined(arg)) {
+        //         return null;
+        //     }
+        //     return arg;
+        // }
+
+        function initSession() {
+            self._log.info(self._sessionObject);
+
+            return q.all([getApi(), getSessionId(params.sessionId), getToken(params.token)])
                 .then(setSession)
+                .then(function() {
+                    return self;
+                })
                 .catch(standardError);
 
             function setSession(res) {
+                self._sessionId = res[1];
+                self._token = res[2];
                 var methodsAndPropsToExtend = ['streams', 'connections', 'on', 'once', 'connect', 'publish', 'signal', 'subscribe', 'forceDisconnect', 'forceUnpublish'];
-                self._session = res.initSession(self._apiKey, sessionId)
+                self._session = res[0].initSession(self._apiKey, self._sessionId)
                 var keys = self._utils.keys(self._session);
                 q.all(keys.map(function(key) {
                     if (methodsAndPropsToExtend.indexOf(key) === -1) {
                         self[key] = self._session[key];
                     }
                 }));
-                return self;
+                connect();
             }
 
         }
 
+        function setReturnVal(res, type) {
+            if (!angular.isString(res)) {
+                throw new Error("Invalid " + type + ": " + res);
+            }
+            return res;
+        }
+
+        function getSessionId(args) {
+            if (angular.isString(args)) {
+                return q.when(args);
+            }
+            args = arrayCheck(args);
+            return timeout(function() {
+                return self._sessionObject[self._sessionIdMethod].apply(null, args);
+            }).then(function(res) {
+                return setReturnVal(res, 'sessionId');
+            });
+        }
+
+        function getApi() {
+            return self._api;
+        }
+
+        function getToken(args) {
+            if (angular.isString(args)) {
+                return q.when(args);
+            }
+            args = arrayCheck(args);
+            return timeout(function() {
+                return self._tokenObject[self._tokenMethod].apply(null, args);
+            }).then(function(res) {
+                return setReturnVal(res, 'token');
+            });
+        }
+
+        function arrayCheck(args) {
+            if (!args) {
+                args = [];
+            }
+            if (args && !angular.isArray(args)) {
+                args = [args]
+            }
+
+            return args;
+        }
+
+        function connect() {
+            return self._utils.handler(function(cb) {
+                    self._session.connect(self._token, cb);
+                })
+                .catch(function(err) {
+                    return self._utils.standardError(err);
+                });
+        }
 
 
         function checkParamKeys(obj, str) {
@@ -98,18 +160,16 @@
             return keys.indexOf(str) === -1;
         }
 
-
         function standardError(err) {
             return self._utils.standardError(err);
         }
 
-        return initSession(self._sessionId);
+        return initSession();
 
     }
 
 
     OpenTokSession.prototype.setPublisher = setPublisher;
-    OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
     OpenTokSession.prototype.signal = signal;
@@ -160,15 +220,8 @@
             });
     }
 
-    function connect() {
-        var self = this;
-        return self._utils.handler(function(cb) {
-                self._session.connect(self._token, cb);
-            })
-            .catch(function(err) {
-                return self._utils.standardError(err);
-            });
-    }
+
+
 
     function signal(data) {
         var self = this;

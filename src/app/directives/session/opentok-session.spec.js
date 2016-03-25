@@ -207,20 +207,20 @@
                         publisher: "obj"
                     });
                 });
-                describe("When autoPublish===true", function() {
-                    it("should call session.publish", function() {
-                        sessionSpy.autoPublish = true;
-                        elem = angular.element("<opentok-session auth='myAuth' " +
-                            "events='myEvents'" +
-                            "></opentok-session>");
-                        $compile(elem)(scope);
-                        scope.$digest();
-                        ctrl.addPublisher({
-                            publisher: "obj"
-                        });
-                        expect(sessionSpy.publish).toHaveBeenCalled();
-                    });
-                });
+                // describe("When autoPublish===true", function() {
+                //     it("should call session.publish", function() {
+                //         sessionSpy.autoPublish = true;
+                //         elem = angular.element("<opentok-session auth='myAuth' " +
+                //             "events='myEvents'" +
+                //             "></opentok-session>");
+                //         $compile(elem)(scope);
+                //         scope.$digest();
+                //         ctrl.addPublisher({
+                //             publisher: "obj"
+                //         });
+                //         expect(sessionSpy.publish).toHaveBeenCalled();
+                //     });
+                // });
             });
             describe('remove', function() {
                 // it("should throw an error if invalid type", function() {

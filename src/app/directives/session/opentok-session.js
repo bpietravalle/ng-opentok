@@ -19,26 +19,26 @@
             bindToController: true,
             controllerAs: 'vm',
             link: {
-                pre: preLinkFn,
+                // pre: preLinkFn,
                 post: postLinkFn
             }
         };
 
-        function preLinkFn(scope) {
-            // var session = scope.vm.session;
-            // $log.info(session.on);
-            // if (session.sessionEvents) {
-            //     session.setSessionEvents()
-            // }
-            // if (session.autoConnect) {
-            //     session.connect();
-            // }
-            scope.$watch('vm.session', function(n, o) {
-                n.connect();
-                $log.info(n);
-            });
+        // function preLinkFn(scope) {
+        //     // var session = scope.vm.session;
+        //     // $log.info(session.on);
+        //     // if (session.sessionEvents) {
+        //     //     session.setSessionEvents()
+        //     // }
+        //     // if (session.autoConnect) {
+        //     //     session.connect();
+        //     // }
+        //     // scope.$watch('vm.session', function(n, o) {
+        //     //     n.connect();
+        //     //     $log.info(n);
+        //     // });
 
-        }
+        // }
 
         function postLinkFn(scope) {
             if (scope.vm.events) {
@@ -139,8 +139,8 @@
                 getSession().setPublisher(obj)
 
                 if (getSession().autoPublish) {
-                    // $log.info(getSession().connection)
-                    publish(obj);
+                    $log.info('publisher added')
+                        // publish(obj);
                 }
             }
 

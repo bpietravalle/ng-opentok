@@ -53,7 +53,7 @@
                 });
                 var defaultVals = [
                     ['getSession', [
-                        ['autoConnect', true],
+                        // ['autoConnect', true],
                         ['autoPublish', true],
                         ['events', false],
                         ['autoSubscribe', true]

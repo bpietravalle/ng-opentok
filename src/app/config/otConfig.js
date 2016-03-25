@@ -14,7 +14,6 @@
          * @param{Object} opts
          * @param{Object} opts.session - required
          * @param{Number} opts.session.apiKey - required
-         * @param{Boolean} [opts.session.autoConnect] - connect to session on initialization - default === true
          * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * other options see below
@@ -65,7 +64,6 @@
                 if (!obj.session.apiKey) {
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
-                obj.session.autoConnect = otutil.paramCheck(obj.session.autoConnect, 'bool', true);
                 obj.session.autoPublish = otutil.paramCheck(obj.session.autoPublish, 'bool', true);
                 obj.session.autoSubscribe = otutil.paramCheck(obj.session.autoSubscribe, 'bool', true);
                 obj.session.events = otutil.paramCheck(obj.session.events, 'bool', false);
