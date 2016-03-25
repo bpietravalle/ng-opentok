@@ -12,42 +12,34 @@
             transclude: true,
             scope: {
                 session: '=',
+                streams: '=?',
                 events: '=?'
             },
-            template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
+            template: "<div class='opentok-session-container'><opentok-subscriber" +
+                " ng-repeat='stream in streams track by stream.id' stream='stream'" +
+                "></opentok-subscriber><opentok-publisher></opentok-publisher>" +
+                "<ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
             bindToController: true,
             controllerAs: 'vm',
             link: {
-                // pre: preLinkFn,
+                pre: preLinkFn,
                 post: postLinkFn
             }
         };
 
-        // function preLinkFn(scope) {
-        //     // var session = scope.vm.session;
-        //     // $log.info(session.on);
-        //     // if (session.sessionEvents) {
-        //     //     session.setSessionEvents()
-        //     // }
-        //     // if (session.autoConnect) {
-        //     //     session.connect();
-        //     // }
-        //     // scope.$watch('vm.session', function(n, o) {
-        //     //     n.connect();
-        //     //     $log.info(n);
-        //     // });
-
-        // }
+        function preLinkFn(scope) {
+            scope.streams = scope.vm.getStreams();
+        }
 
         function postLinkFn(scope) {
+            scope.$broadcast('sessionReady');
             if (scope.vm.events) {
                 eventSetter(scope.vm, 'session'); //put in post link so can pass ctrl as well
             }
 
 
             scope.$on('$destroy', destroy);
-            scope.$broadcast('sessionReady');
 
             function destroy() {
                 //disconnect
@@ -104,7 +96,7 @@
             }
 
             function getStreams() {
-                return getSession().streams;
+                return getSession().getStreams();
             }
 
             function publish(p) {
@@ -139,8 +131,8 @@
                 getSession().setPublisher(obj)
 
                 if (getSession().autoPublish) {
-                    $log.info('publisher added')
-                        // publish(obj);
+                    // $log.info('publisher added')
+                    // publish(obj);
                 }
             }
 

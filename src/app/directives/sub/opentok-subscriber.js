@@ -12,26 +12,28 @@
             restrict: 'E',
             scope: {
                 stream: '=',
+                subscriber: '=?',
                 events: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                var stream = scope.stream;
-                scope.$on('sessionReady', subscribe)
+                $log.info(element);
 
-                function subscribe() {
-                    scope.subscriber = ctrl.subscribe(stream, element[0]);
-                    if (scope.events) {
-                        eventSetter(scope, 'subscriber');
-                    }
-                    $log.info("We streamin");
-                    $log.info(scope.subscriber);
+                ctrl.subscribe(scope.stream, element[0])
+                    .then(function(res) {
+                        scope.subscriber = res;
+                    });
+                if (scope.events) {
+                    eventSetter(scope, 'subscriber');
                 }
+
+                $log.info("We streamin");
+                // }
 
                 scope.$on('$destroy', destroy);
 
                 function destroy() {
-                    ctrl.unsubscribe(stream);
+                    ctrl.unsubscribe(scope.stream);
                 }
 
             }

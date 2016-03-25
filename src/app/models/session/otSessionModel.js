@@ -42,7 +42,6 @@
             standardError("Token must be defined");
         }
         self._apiKey = self._options.apiKey;
-        // self.autoConnect = self._options.autoConnect;
         self.autoPublish = self._options.autoPublish;
         self.autoSubscribe = self._options.autoSubscribe;
         self.sessionEvents = self._options.events;
@@ -74,7 +73,6 @@
         // }
 
         function initSession() {
-            self._log.info(self._sessionObject);
 
             return q.all([getApi(), getSessionId(params.sessionId), getToken(params.token)])
                 .then(setSession)
@@ -169,10 +167,13 @@
     }
 
 
+    OpenTokSession.prototype.removeStream = removeStream;
+    OpenTokSession.prototype.addStream = addStream;
     OpenTokSession.prototype.setPublisher = setPublisher;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
     OpenTokSession.prototype.signal = signal;
+    OpenTokSession.prototype.getStreams = getStreams;
     OpenTokSession.prototype.forceUnpublish = forceUnpublish;
     OpenTokSession.prototype.forceDisconnect = forceDisconnect;
     OpenTokSession.prototype.on = on;
@@ -208,6 +209,7 @@
     function publish(obj) {
         var self = this;
         if (!obj) {
+          self._log.info(self.publisher);
             obj = self.publisher._publisher;
             if (!obj) throw new Error("Publisher is undefined");
         }
@@ -220,8 +222,19 @@
             });
     }
 
+    function getStreams() {
+        var self = this;
+        return self.streams.getAll();
+    }
 
 
+    function addStream(obj) {
+        this.streams.add(obj);
+    }
+
+    function removeStream(obj) {
+        this.streams.remove(obj);
+    }
 
     function signal(data) {
         var self = this;
@@ -238,7 +251,7 @@
         var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
-                session.forceUnpublish(stream, cb);
+                session.forceUnpublish(stream.main, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -249,7 +262,7 @@
         var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
-                session.forceDisconnect(connection, cb);
+                session.forceDisconnect(connection.main, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);

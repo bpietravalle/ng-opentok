@@ -5,38 +5,53 @@
         .directive('opentokSubscribers', otSubscribersDirective);
 
     /** @ngInject */
-    function otSubscribersDirective($q) {
+    function otSubscribersDirective($q, $log) {
 
         return {
             require: '?^^opentokSession',
             restrict: 'E',
+            // transclude: true,
             scope: {
-                streams: '&',
+                streams: '=streams',
                 events: '=?'
             },
             template: "<div class='opentok-subscribers'><opentok-subscriber" +
                 " ng-repeat='stream in streams track by stream.id' stream='stream' events='events'>" +
-                "</opentok-subscriber></div>",
+                "<ng-transclude></ng-transclude></opentok-subscriber></div>",
             controller: OpenTokSubscribersController,
-            controllerAs: 'vm',
             bindToController: true,
-            link: function(scope, element, a) {
-                // scope.$on('sessionReady', getStreams)
-
-                // function getStreams() {
-                //     scope.streams = ctrl.getStreams();
-                //     $log.info(scope.streams);
-                // }
+            link: {
+                pre: prelink,
+                post: postlink
             }
+
         };
 
-        /** @ngInject */
-        function OpenTokSubscribersController() {
-            var vm = this;
-            vm
-
+        function prelink(scope) {
+            $log.info('in subscribers pre')
+            $log.info(scope)
         }
 
+        function postlink(scope, element, a, ctrl) {
+            $log.info('in subscribers')
+            $log.info(scope);
+
+            scope.$on('sessionReady', getStreams)
+
+            function getStreams() {
+                scope.streams = ctrl.getStreams();
+                $log.info(scope.streams);
+            }
+        }
     }
+
+    /** @ngInject */
+    function OpenTokSubscribersController($log) {
+        var vm = this;
+        $log.info('in subscribers')
+        $log.info(vm)
+
+    }
+
 
 })();

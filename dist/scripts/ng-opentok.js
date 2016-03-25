@@ -154,7 +154,6 @@
          * @param{Object} opts
          * @param{Object} opts.session - required
          * @param{Number} opts.session.apiKey - required
-         * @param{Boolean} [opts.session.autoConnect] - connect to session on initialization - default === true
          * @param{Object} [opts.subscriber] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * @param{Object} [opts.publisher] - set default 'targetElement' (ie dom id) and 'targetProperties';
          * other options see below
@@ -205,7 +204,6 @@
                 if (!obj.session.apiKey) {
                     throw new Error("Please set apiKey during the config phase of your module");
                 }
-                obj.session.autoConnect = otutil.paramCheck(obj.session.autoConnect, 'bool', true);
                 obj.session.autoPublish = otutil.paramCheck(obj.session.autoPublish, 'bool', true);
                 obj.session.autoSubscribe = otutil.paramCheck(obj.session.autoSubscribe, 'bool', true);
                 obj.session.events = otutil.paramCheck(obj.session.events, 'bool', false);
@@ -580,42 +578,34 @@
             transclude: true,
             scope: {
                 session: '=',
+                streams: '=?',
                 events: '=?'
             },
-            template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
+            template: "<div class='opentok-session-container'><opentok-subscriber" +
+                " ng-repeat='stream in streams track by stream.id' stream='stream'" +
+                "></opentok-subscriber><opentok-publisher></opentok-publisher>" +
+                "<ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
             bindToController: true,
             controllerAs: 'vm',
             link: {
-                // pre: preLinkFn,
+                pre: preLinkFn,
                 post: postLinkFn
             }
         };
 
-        // function preLinkFn(scope) {
-        //     // var session = scope.vm.session;
-        //     // $log.info(session.on);
-        //     // if (session.sessionEvents) {
-        //     //     session.setSessionEvents()
-        //     // }
-        //     // if (session.autoConnect) {
-        //     //     session.connect();
-        //     // }
-        //     // scope.$watch('vm.session', function(n, o) {
-        //     //     n.connect();
-        //     //     $log.info(n);
-        //     // });
-
-        // }
+        function preLinkFn(scope) {
+            scope.streams = scope.vm.getStreams();
+        }
 
         function postLinkFn(scope) {
+            scope.$broadcast('sessionReady');
             if (scope.vm.events) {
                 eventSetter(scope.vm, 'session'); //put in post link so can pass ctrl as well
             }
 
 
             scope.$on('$destroy', destroy);
-            scope.$broadcast('sessionReady');
 
             function destroy() {
                 //disconnect
@@ -672,7 +662,7 @@
             }
 
             function getStreams() {
-                return getSession().streams;
+                return getSession().getStreams();
             }
 
             function publish(p) {
@@ -707,8 +697,8 @@
                 getSession().setPublisher(obj)
 
                 if (getSession().autoPublish) {
-                    $log.info('publisher added')
-                        // publish(obj);
+                    // $log.info('publisher added')
+                    // publish(obj);
                 }
             }
 
@@ -745,26 +735,28 @@
             restrict: 'E',
             scope: {
                 stream: '=',
+                subscriber: '=?',
                 events: '=?'
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                var stream = scope.stream;
-                scope.$on('sessionReady', subscribe)
+                $log.info(element);
 
-                function subscribe() {
-                    scope.subscriber = ctrl.subscribe(stream, element[0]);
-                    if (scope.events) {
-                        eventSetter(scope, 'subscriber');
-                    }
-                    $log.info("We streamin");
-                    $log.info(scope.subscriber);
+                ctrl.subscribe(scope.stream, element[0])
+                    .then(function(res) {
+                        scope.subscriber = res;
+                    });
+                if (scope.events) {
+                    eventSetter(scope, 'subscriber');
                 }
+
+                $log.info("We streamin");
+                // }
 
                 scope.$on('$destroy', destroy);
 
                 function destroy() {
-                    ctrl.unsubscribe(stream);
+                    ctrl.unsubscribe(scope.stream);
                 }
 
             }
@@ -784,44 +776,60 @@
 (function() {
     'use strict';
 
-    otSubscribersDirective.$inject = ["$q"];
+    otSubscribersDirective.$inject = ["$q", "$log"];
+    OpenTokSubscribersController.$inject = ["$log"];
     angular.module('ngOpenTok.directives.subscribers')
         .directive('opentokSubscribers', otSubscribersDirective);
 
     /** @ngInject */
-    function otSubscribersDirective($q) {
+    function otSubscribersDirective($q, $log) {
 
         return {
             require: '?^^opentokSession',
             restrict: 'E',
+            // transclude: true,
             scope: {
-                streams: '&',
+                streams: '=streams',
                 events: '=?'
             },
             template: "<div class='opentok-subscribers'><opentok-subscriber" +
                 " ng-repeat='stream in streams track by stream.id' stream='stream' events='events'>" +
-                "</opentok-subscriber></div>",
+                "<ng-transclude></ng-transclude></opentok-subscriber></div>",
             controller: OpenTokSubscribersController,
-            controllerAs: 'vm',
             bindToController: true,
-            link: function(scope, element, a) {
-                // scope.$on('sessionReady', getStreams)
-
-                // function getStreams() {
-                //     scope.streams = ctrl.getStreams();
-                //     $log.info(scope.streams);
-                // }
+            link: {
+                pre: prelink,
+                post: postlink
             }
+
         };
 
-        /** @ngInject */
-        function OpenTokSubscribersController() {
-            var vm = this;
-            vm
-
+        function prelink(scope) {
+            $log.info('in subscribers pre')
+            $log.info(scope)
         }
 
+        function postlink(scope, element, a, ctrl) {
+            $log.info('in subscribers')
+            $log.info(scope);
+
+            scope.$on('sessionReady', getStreams)
+
+            function getStreams() {
+                scope.streams = ctrl.getStreams();
+                $log.info(scope.streams);
+            }
+        }
     }
+
+    /** @ngInject */
+    function OpenTokSubscribersController($log) {
+        var vm = this;
+        $log.info('in subscribers')
+        $log.info(vm)
+
+    }
+
 
 })();
 
@@ -1159,7 +1167,6 @@
             standardError("Token must be defined");
         }
         self._apiKey = self._options.apiKey;
-        // self.autoConnect = self._options.autoConnect;
         self.autoPublish = self._options.autoPublish;
         self.autoSubscribe = self._options.autoSubscribe;
         self.sessionEvents = self._options.events;
@@ -1191,7 +1198,6 @@
         // }
 
         function initSession() {
-            self._log.info(self._sessionObject);
 
             return q.all([getApi(), getSessionId(params.sessionId), getToken(params.token)])
                 .then(setSession)
@@ -1286,14 +1292,15 @@
     }
 
 
+    OpenTokSession.prototype.removeStream = removeStream;
+    OpenTokSession.prototype.addStream = addStream;
     OpenTokSession.prototype.setPublisher = setPublisher;
-    // OpenTokSession.prototype.construct = construct;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
     OpenTokSession.prototype.signal = signal;
+    OpenTokSession.prototype.getStreams = getStreams;
     OpenTokSession.prototype.forceUnpublish = forceUnpublish;
     OpenTokSession.prototype.forceDisconnect = forceDisconnect;
-    // OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.on = on;
     OpenTokSession.prototype.once = once;
     OpenTokSession.prototype.inspect = inspect;
@@ -1327,6 +1334,7 @@
     function publish(obj) {
         var self = this;
         if (!obj) {
+          self._log.info(self.publisher);
             obj = self.publisher._publisher;
             if (!obj) throw new Error("Publisher is undefined");
         }
@@ -1339,8 +1347,19 @@
             });
     }
 
+    function getStreams() {
+        var self = this;
+        return self.streams.getAll();
+    }
 
 
+    function addStream(obj) {
+        this.streams.add(obj);
+    }
+
+    function removeStream(obj) {
+        this.streams.remove(obj);
+    }
 
     function signal(data) {
         var self = this;
@@ -1357,7 +1376,7 @@
         var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
-                session.forceUnpublish(stream, cb);
+                session.forceUnpublish(stream.main, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -1368,7 +1387,7 @@
         var self = this;
         var session = this._session;
         return this._utils.handler(function(cb) {
-                session.forceDisconnect(connection, cb);
+                session.forceDisconnect(connection.main, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -1382,12 +1401,6 @@
         });
     }
 
-    // function construct() {
-    //     // if (self.autoConnect) {
-    //     // connect();
-    //     // }
-
-    // }
 
 
     /***************
