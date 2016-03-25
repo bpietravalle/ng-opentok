@@ -263,7 +263,7 @@
                 script.onload = function() {
                     cb();
 										//untested
-                    // script.onload = null;
+                    script.onload = null;
                 };
                 // TODO IE fix
                 // if (script.readyState === 'loaded' || script.readyState === 'completed') {
@@ -521,6 +521,7 @@
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
+                publisher: '=?',
                 events: '=?'
             },
             template: "<div class='opentok-publisher'></div>",
@@ -530,9 +531,9 @@
             }
         };
 
-        function preLinkFn(scope, element) {
-            //not sure safe for here
-        }
+        // function preLinkFn(scope, element) {
+        //     //not sure safe for here
+        // }
 
         function postLinkFn(scope, element, a, ctrl) {
             scope.$on('$destroy', destroy);
@@ -540,12 +541,7 @@
             scope.$on('sessionReady', pushPublisher);
 
             function destroy() {
-                if (scope.publisher.stream) {
-                    ctrl.unpublish(scope.publisher);
-                } else {
-                    scope.publisher.destroy();
-                    ctrl.remove('publishers', scope.publisher);
-                }
+                // scope.publisher.destroy();
             }
 
             function pushPublisher() {
@@ -572,55 +568,54 @@
 (function() {
     'use strict';
 
-    OpenTokSessionDirective.$inject = ["$q", "$log", "otSessionModel", "eventSetter"];
+    OpenTokSessionDirective.$inject = ["$q", "$log", "eventSetter"];
     angular.module('ngOpenTok.directives.session')
         .directive('opentokSession', OpenTokSessionDirective);
 
     /** @ngInject */
-    function OpenTokSessionDirective($q, $log, otSessionModel, eventSetter) {
+    function OpenTokSessionDirective($q, $log, eventSetter) {
 
-        OpenTokSessionController.$inject = ["$log", "$scope"];
         return {
             restrict: 'E',
             transclude: true,
             scope: {
-                session: '=?',
-                auth: '=',
+                session: '=',
                 events: '=?'
             },
             template: "<div class='opentok-session-container'><ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
+            bindToController: true,
+            controllerAs: 'vm',
             link: {
-                pre: preLink,
+                pre: preLinkFn,
                 post: postLinkFn
             }
         };
 
-        function preLink(scope) {
-            otSessionModel({
-                    sessionId: scope.auth.sessionId,
-                    token: scope.auth.token
-                })
-                .then(setSessionAndEvents)
-                .catch(standardError);
-
-            function setSessionAndEvents(res) {
-                scope.session = res;
-                scope.streams = scope.session.streams;
-                scope.publisher = scope.session.publisher;
-                scope.connections = scope.session.connections;
-            }
+        function preLinkFn(scope) {
+            // var session = scope.vm.session;
+            // $log.info(session.on);
+            // if (session.sessionEvents) {
+            //     session.setSessionEvents()
+            // }
+            // if (session.autoConnect) {
+            //     session.connect();
+            // }
+            scope.$watch('vm.session', function(n, o) {
+                n.connect();
+                $log.info(n);
+            });
 
         }
 
         function postLinkFn(scope) {
-            // scope.$broadcast('sessionReady');
-            if (scope.events) {
-                eventSetter(scope, 'session'); //put in post link so can pass ctrl as well
+            if (scope.vm.events) {
+                eventSetter(scope.vm, 'session'); //put in post link so can pass ctrl as well
             }
 
 
             scope.$on('$destroy', destroy);
+            scope.$broadcast('sessionReady');
 
             function destroy() {
                 //disconnect
@@ -628,14 +623,13 @@
             }
         }
 
-        function standardError(err) {
-            return $q.reject(err);
-        }
+        // function standardError(err) {
+        //     return $q.reject(err);
+        // }
 
-        /** @ngInject */
-        function OpenTokSessionController($log, $scope) {
+        function OpenTokSessionController() {
+
             var vm = this;
-            vm.$onInit = init;
             vm.isConnected = isConnected;
             vm.isLocal = isLocal;
             vm.autoSubscribe = autoSubscribe;
@@ -650,10 +644,24 @@
             vm.forceUnpublish = forceUnpublish;
             vm.signal = signal;
 
-            function init() {
-                vm.session = $scope.session;
-                $log.info($scope.auth);
-            }
+            // init();
+
+            // function init() {
+            //     return otSessionModel({
+            //             sessionId: vm.auth.sessionId,
+            //             token: vm.auth.token
+            //         })
+            //         .then(setSessionAndEvents)
+            //         .catch(standardError);
+
+            //     function setSessionAndEvents(res) {
+            //         vm.session = res;
+            //         vm.streams = vm.session.streams;
+            //         vm.publisher = vm.session.publisher;
+            //         vm.connections = vm.session.connections;
+            //     }
+
+            // }
 
             function getSession() {
                 return vm.session;
@@ -696,8 +704,10 @@
             }
 
             function addPublisher(obj) {
-                getSession().publisher = obj;
+                getSession().setPublisher(obj)
+
                 if (getSession().autoPublish) {
+                    // $log.info(getSession().connection)
                     publish(obj);
                 }
             }
@@ -774,39 +784,42 @@
 (function() {
     'use strict';
 
-    otSubscribersDirective.$inject = ["$q", "$log"];
+    otSubscribersDirective.$inject = ["$q"];
     angular.module('ngOpenTok.directives.subscribers')
         .directive('opentokSubscribers', otSubscribersDirective);
 
     /** @ngInject */
-    function otSubscribersDirective($q, $log) {
+    function otSubscribersDirective($q) {
 
         return {
             require: '?^^opentokSession',
             restrict: 'E',
             scope: {
-                streams: '=',
+                streams: '&',
                 events: '=?'
             },
             template: "<div class='opentok-subscribers'><opentok-subscriber" +
                 " ng-repeat='stream in streams track by stream.id' stream='stream' events='events'>" +
                 "</opentok-subscriber></div>",
-            link: function(scope, element, a, ctrl) {
-                scope.$on('sessionReady', getStreams)
+            controller: OpenTokSubscribersController,
+            controllerAs: 'vm',
+            bindToController: true,
+            link: function(scope, element, a) {
+                // scope.$on('sessionReady', getStreams)
 
-                function getStreams() {
-                    scope.streams = ctrl.getStreams();
-                    $log.info(scope.streams);
-                }
+                // function getStreams() {
+                //     scope.streams = ctrl.getStreams();
+                //     $log.info(scope.streams);
+                // }
             }
         };
 
         /** @ngInject */
-        // function OpenTokSubscriberController() {
-        //     var vm = this;
-        //     vm
+        function OpenTokSubscribersController() {
+            var vm = this;
+            vm
 
-        // }
+        }
 
     }
 
@@ -1121,6 +1134,7 @@
         return function(params) {
             return new OpenTokSession($q, $timeout, $injector, OTApi, otutil, $log, otConfiguration, otStreams, otConnections, params)
                 .then(function(res) {
+                  //to remove;
                     if (res.sessionEvents) {
                         res.setSessionEvents();
                     }
@@ -1132,7 +1146,8 @@
                         res.connect();
                     }
                     return res;
-
+                }).catch(function(err) {
+                    return $q.reject(err);
                 });
         }
     }
@@ -1140,6 +1155,7 @@
 
     function OpenTokSession(q, timeout, injector, api, utils, log, config, streams, connections, params) {
         var self = this;
+        self._timeout = timeout;
         self._api = api;
         self._utils = utils;
         self._log = log;
@@ -1163,17 +1179,14 @@
         self.connections = connections();
         self.streams = streams();
         self.publisher = {};
-
         if (self.sessionEvents) {
             self.setSessionEvents = function() {
-                timeout(function() {
+                self._timeout(function() {
                     var factory = injector.get(self._options.eventsService);
                     factory.call(self);
                 });
             };
         }
-
-        self._log.info(self);
 
         function initSession(sessionId) {
 
@@ -1195,6 +1208,8 @@
 
         }
 
+
+
         function checkParamKeys(obj, str) {
             var keys = self._utils.keys(obj);
             return keys.indexOf(str) === -1;
@@ -1210,6 +1225,7 @@
     }
 
 
+    OpenTokSession.prototype.setPublisher = setPublisher;
     OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
@@ -1245,15 +1261,6 @@
         });
     }
 
-    function connect() {
-        var self = this;
-        return self._utils.handler(function(cb) {
-                self._session.connect(self._token, cb);
-            })
-            .catch(function(err) {
-                return self._utils.standardError(err);
-            });
-    }
 
     function publish(obj) {
         var self = this;
@@ -1264,6 +1271,16 @@
 
         return self._utils.handler(function(cb) {
                 self._session.publish(obj, cb)
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
+    }
+
+    function connect() {
+        var self = this;
+        return self._utils.handler(function(cb) {
+                self._session.connect(self._token, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -1302,6 +1319,14 @@
                 return self._utils.standardError(err);
             });
     }
+
+    function setPublisher(obj) {
+        var self = this;
+        self._timeout(function() {
+            self.publisher = obj;
+        });
+    }
+
 
 
     /***************

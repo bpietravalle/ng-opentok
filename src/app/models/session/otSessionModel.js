@@ -17,6 +17,7 @@
         return function(params) {
             return new OpenTokSession($q, $timeout, $injector, OTApi, otutil, $log, otConfiguration, otStreams, otConnections, params)
                 .then(function(res) {
+                  //to remove;
                     if (res.sessionEvents) {
                         res.setSessionEvents();
                     }
@@ -28,7 +29,8 @@
                         res.connect();
                     }
                     return res;
-
+                }).catch(function(err) {
+                    return $q.reject(err);
                 });
         }
     }
@@ -36,6 +38,7 @@
 
     function OpenTokSession(q, timeout, injector, api, utils, log, config, streams, connections, params) {
         var self = this;
+        self._timeout = timeout;
         self._api = api;
         self._utils = utils;
         self._log = log;
@@ -59,15 +62,9 @@
         self.connections = connections();
         self.streams = streams();
         self.publisher = {};
-        self.setPublisher = function(obj) {
-            timeout(function() {
-                self.publisher = obj;
-            });
-        };
-
         if (self.sessionEvents) {
             self.setSessionEvents = function() {
-                timeout(function() {
+                self._timeout(function() {
                     var factory = injector.get(self._options.eventsService);
                     factory.call(self);
                 });
@@ -94,6 +91,8 @@
 
         }
 
+
+
         function checkParamKeys(obj, str) {
             var keys = self._utils.keys(obj);
             return keys.indexOf(str) === -1;
@@ -109,6 +108,7 @@
     }
 
 
+    OpenTokSession.prototype.setPublisher = setPublisher;
     OpenTokSession.prototype.connect = connect;
     OpenTokSession.prototype.subscribe = subscribe;
     OpenTokSession.prototype.publish = publish;
@@ -144,15 +144,6 @@
         });
     }
 
-    function connect() {
-        var self = this;
-        return self._utils.handler(function(cb) {
-                self._session.connect(self._token, cb);
-            })
-            .catch(function(err) {
-                return self._utils.standardError(err);
-            });
-    }
 
     function publish(obj) {
         var self = this;
@@ -163,6 +154,16 @@
 
         return self._utils.handler(function(cb) {
                 self._session.publish(obj, cb)
+            })
+            .catch(function(err) {
+                return self._utils.standardError(err);
+            });
+    }
+
+    function connect() {
+        var self = this;
+        return self._utils.handler(function(cb) {
+                self._session.connect(self._token, cb);
             })
             .catch(function(err) {
                 return self._utils.standardError(err);
@@ -200,6 +201,13 @@
             .catch(function(err) {
                 return self._utils.standardError(err);
             });
+    }
+
+    function setPublisher(obj) {
+        var self = this;
+        self._timeout(function() {
+            self.publisher = obj;
+        });
     }
 
 

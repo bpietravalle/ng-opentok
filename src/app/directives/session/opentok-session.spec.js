@@ -7,17 +7,24 @@
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
             module('ngOpenTok.directives.session', function($provide) {
-                $provide.value('OTAsyncLoader', {});
+                $provide.value('OTApi', function($q) {
+                    // return {
+                    //     load: jasmine.createSpy('load').and.callFake(function() {
+                            return $q.when({});
+                        // })
+                    // };
+                });
+                $provide.value('OTApi', function($q) {
+                    // return {
+                    //     load: jasmine.createSpy('load').and.callFake(function() {
+                            return $q.when({});
+                        // })
+                    // };
+                });
                 $provide.factory('eventSetter', function($q) {
                     return jasmine.createSpy('eventSetter').and.callFake(function() {
                         return $q.when({});
                     });
-                });
-
-                $provide.factory('otSessionModel', function($q) {
-                    return function() {
-                        return $q.when(sessionSpy);
-                    };
                 });
             });
             inject(function(_$q_, _$compile_, _eventSetter_, _$rootScope_) {
@@ -56,7 +63,8 @@
                 connect: promiseWrap('connect'),
                 unpublish: promiseWrap('unpublish'),
                 publish: promiseWrap('publish'),
-                signal: promiseWrap('subscribe'),
+                setPublisher: promiseWrap('setPublisher'),
+                signal: promiseWrap('signal'),
                 publisher: {},
                 connections: {
                     id: "connections"
@@ -69,10 +77,11 @@
                 forceUnpublish: promiseWrap('forceUnpublish'),
                 forceDisconnect: promiseWrap('forceDisconnect')
             };
-            scope.myAuth = {
-                token: "heresTheToken",
-                sessionId: 'heresTheSessionId'
-            };
+            // scope.myAuth = {
+            //     token: "heresTheToken",
+            //     sessionId: 'heresTheSessionId'
+            // };
+            scope.mySession = sessionSpy;
             scope.myEvents = {
                 on: {
                     'event1': handler,
@@ -82,8 +91,8 @@
                     'event3': handler
                 }
             };
-            elem = angular.element("<opentok-session auth='myAuth' " +
-                "events='myEvents'" +
+            elem = angular.element("<opentok-session " +
+                " session='mySession' events='myEvents'" +
                 "></opentok-session>");
             $compile(elem)(scope);
             scope.$digest();
@@ -110,17 +119,17 @@
                 expect(ctrl.session).toBeDefined();
                 expect(ctrl.session).toEqual(sessionSpy);
             });
-            it("should have publisher object", function() {
-                expect(ctrl.publisher).toEqual(sessionSpy.publisher);
-            });
-            it("should have connections object", function() {
-                expect(ctrl.connections).toEqual(sessionSpy.connections);
-            });
-            it("should have streams object", function() {
-                expect(ctrl.streams).toEqual(sessionSpy.streams);
-            });
+            // it("should have publisher object", function() {
+            //     expect(ctrl.publisher).toEqual(sessionSpy.publisher);
+            // });
+            // it("should have connections object", function() {
+            //     expect(ctrl.connections).toEqual(sessionSpy.connections);
+            // });
+            // it("should have streams object", function() {
+            //     expect(ctrl.streams).toEqual(sessionSpy.streams);
+            // });
             it("should have events object", function() {
-                expect(iscope.events).toBeDefined();
+                expect(iscope.vm.events).toBeDefined();
             });
             describe("eventSetter", function() {
                 describe("When scope.events is defined", function() {
@@ -190,12 +199,11 @@
                 });
             });
             describe('addPublisher', function() {
-                it('should set "publisher" property of session', function() {
-                    expect(ctrl.publisher).toEqual({});
+                it('should call "setPublisher" on session model', function() {
                     ctrl.addPublisher({
                         publisher: "obj"
                     });
-                    expect(ctrl.session.publisher).toEqual({
+                    expect(sessionSpy.setPublisher).toHaveBeenCalledWith({
                         publisher: "obj"
                     });
                 });
