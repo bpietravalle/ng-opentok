@@ -2,24 +2,13 @@
     'use strict';
 
     describe("opentokSession Directive", function() {
-        var $q, spy, $compile, ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
+        var $q, $compile, ctrl, es, rs, handler, sessionSpy, scope, elem, iscope;
 
         beforeEach(function() {
             handler = jasmine.createSpy('handler');
             module('ngOpenTok.directives.session', function($provide) {
                 $provide.value('OTApi', function($q) {
-                    // return {
-                    //     load: jasmine.createSpy('load').and.callFake(function() {
-                            return $q.when({});
-                        // })
-                    // };
-                });
-                $provide.value('OTApi', function($q) {
-                    // return {
-                    //     load: jasmine.createSpy('load').and.callFake(function() {
-                            return $q.when({});
-                        // })
-                    // };
+                    return $q.when({});
                 });
                 $provide.factory('eventSetter', function($q) {
                     return jasmine.createSpy('eventSetter').and.callFake(function() {
@@ -78,10 +67,6 @@
                 forceUnpublish: promiseWrap('forceUnpublish'),
                 forceDisconnect: promiseWrap('forceDisconnect')
             };
-            // scope.myAuth = {
-            //     token: "heresTheToken",
-            //     sessionId: 'heresTheSessionId'
-            // };
             scope.mySession = sessionSpy;
             scope.myEvents = {
                 on: {
@@ -98,8 +83,7 @@
             $compile(elem)(scope);
             scope.$digest();
             iscope = elem.isolateScope();
-            spy = jasmine.createSpy('spy');
-            iscope.$on('sessionReady', spy);
+            // spy = jasmine.createSpy('spy');
             ctrl = elem.controller('opentokSession');
         });
         afterEach(function() {
@@ -120,15 +104,6 @@
                 expect(ctrl.session).toBeDefined();
                 expect(ctrl.session).toEqual(sessionSpy);
             });
-            // it("should have publisher object", function() {
-            //     expect(ctrl.publisher).toEqual(sessionSpy.publisher);
-            // });
-            // it("should have connections object", function() {
-            //     expect(ctrl.connections).toEqual(sessionSpy.connections);
-            // });
-            // it("should have streams object", function() {
-            //     expect(ctrl.streams).toEqual(sessionSpy.streams);
-            // });
             it("should have events object", function() {
                 expect(iscope.vm.events).toBeDefined();
             });
@@ -141,7 +116,7 @@
                 });
                 describe("When scope.events isn't set", function() {
                     it("should not call eventSetter", function() {
-                        elem = angular.element("<opentok-session auth='myAuth' " +
+                        elem = angular.element("<opentok-session session='mySession'" +
                             "></opentok-session>");
                         $compile(elem)(scope);
                         scope.$digest();
@@ -158,8 +133,9 @@
             it("should take 'autoSubscribe' prop from session obj", function() {
                 expect(ctrl.autoSubscribe()).toEqual(sessionSpy.autoSubscribe);
             });
-            it("getStreams() should return'streams' prop from session obj", function() {
-                expect(ctrl.getStreams()).toEqual(sessionSpy.streams);
+            it("getStreams() should call session.getStreams", function() {
+                ctrl.getStreams();
+                expect(sessionSpy.getStreams).toHaveBeenCalled();
             });
 
             var ctrlMeths = [
@@ -223,38 +199,6 @@
                 //     });
                 // });
             });
-            describe('remove', function() {
-                // it("should throw an error if invalid type", function() {
-                //     expect(function() {
-                //         ctrl.remove('stuff', {});
-                //     }).toThrow();
-                // });
-                // it("should remove publisher from array", function() {
-                //     iscope.publishers.push('a');
-                //     iscope.publishers.push('b');
-                //     iscope.publishers.push('c');
-                //     expect(iscope.publishers).toHaveLength(3);
-                //     ctrl.remove('publishers', 'a');
-                //     expect(iscope.publishers).toHaveLength(2);
-                // });
-            });
-
         });
-
-        // it("
-        //                     should be defined ", function() {
-        // //     expect(iscope).toEqual("
-        //                     as ");
-        // // });
-        // // describe("
-        //                     Properties ", function() {
-        // //     describe("
-        //                     SessionId ", function() {
-        // //         it("
-        //                     should work ", function() {
-        // //             expect(elem.html()).toBeDefined();
-        //         });
-        //     });
-        // });
     });
 })();

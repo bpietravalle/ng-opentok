@@ -68,24 +68,6 @@
             vm.forceUnpublish = forceUnpublish;
             vm.signal = signal;
 
-            // init();
-
-            // function init() {
-            //     return otSessionModel({
-            //             sessionId: vm.auth.sessionId,
-            //             token: vm.auth.token
-            //         })
-            //         .then(setSessionAndEvents)
-            //         .catch(standardError);
-
-            //     function setSessionAndEvents(res) {
-            //         vm.session = res;
-            //         vm.streams = vm.session.streams;
-            //         vm.publisher = vm.session.publisher;
-            //         vm.connections = vm.session.connections;
-            //     }
-
-            // }
 
             function getSession() {
                 return vm.session;

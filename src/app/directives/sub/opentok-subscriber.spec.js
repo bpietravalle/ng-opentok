@@ -102,7 +102,7 @@
                     describe("When scope.events is defined", function() {
                         it("should call 'eventSetter' with scope and 'subscriber'", function() {
                             parent.$broadcast('sessionReady');
-                            expect(es.calls.argsFor(0)[0]).toEqual(scope);
+                            expect(es.calls.argsFor(0)[0].$parent).toEqual(scope);
                             expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
                         });
                     });
