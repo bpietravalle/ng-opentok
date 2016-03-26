@@ -10,7 +10,7 @@
         return {
             require: '?^^opentokSession',
             restrict: 'E',
-            // transclude: true,
+            transclude: true,
             scope: {
                 streams: '=streams',
                 events: '=?'
@@ -18,8 +18,9 @@
             template: "<div class='opentok-subscribers'><opentok-subscriber" +
                 " ng-repeat='stream in streams track by stream.id' stream='stream' events='events'>" +
                 "<ng-transclude></ng-transclude></opentok-subscriber></div>",
-            controller: OpenTokSubscribersController,
-            bindToController: true,
+            // controller: OpenTokSubscribersController,
+						// controllerAs: 'vm',
+            // bindToController: true,
             link: {
                 pre: prelink,
                 post: postlink
@@ -46,12 +47,12 @@
     }
 
     /** @ngInject */
-    function OpenTokSubscribersController($log) {
-        var vm = this;
-        $log.info('in subscribers')
-        $log.info(vm)
+    // function OpenTokSubscribersController($log) {
+    //     var vm = this;
+    //     $log.info('in subscribers')
+    //     $log.info(vm)
 
-    }
+    // }
 
 
 })();

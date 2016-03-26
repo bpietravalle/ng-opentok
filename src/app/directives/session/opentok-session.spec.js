@@ -60,6 +60,7 @@
                 },
                 once: promiseWrap('once'),
                 on: promiseWrap('on'),
+                getStreams: promiseWrap('getStreams'),
                 connect: promiseWrap('connect'),
                 unpublish: promiseWrap('unpublish'),
                 publish: promiseWrap('publish'),

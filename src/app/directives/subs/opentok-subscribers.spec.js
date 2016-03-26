@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    describe("opentokSubscriber Directive", function() {
+    describe("opentokSubscribers Directive", function() {
         var ctrl, parent, streams, $compile, sessionCtrl, rs, sessionSpy, scope, elem, subSpy;
 
         beforeEach(function() {
@@ -68,23 +68,26 @@
                 height: 300,
                 width: 400
             };
-            scope.stream = {
-                "stream": "obj"
+            scope.myStreams = {
+                '1': {
+                    id: 1,
+                    main: 'a'
+                }
             };
             scope.myEvents1 = {};
             scope.myEvents2 = {};
             elem = angular.element(
-              // "<opentok-session>" +
-                "<opentok-subscribers streams='getStreams' events='myEvents1' " +
-                "></opentok-subscribers>");// +
-                // "</opentok-session>"
-            // );
+                "<opentok-session>" +
+                "<opentok-subscribers streams='myStreams' events='myEvents1' " +
+                "></opentok-subscribers>" +
+                "</opentok-session>"
+            );
             elem.data({
                 '$opentokSessionController': sessionCtrl
             });
             compiledElem(elem, scope);
+            // ctrl = elem.controller('opentokSubscribers')
             parent.$broadcast('sessionReady');
-            ctrl = elem.controller('opentokSubscribers')
         });
 
         function compiledElem(e, s) {

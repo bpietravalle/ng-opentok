@@ -2,7 +2,7 @@
     'use strict';
 
     describe("opentokSubscriber Directive", function() {
-        var parent, $compile, sessionCtrl, rs, sessionSpy, scope, es, elem, subSpy;
+        var $q, parent, $compile, sessionCtrl, rs, sessionSpy, scope, es, elem, subSpy;
 
         beforeEach(function() {
             module('ngOpenTok.directives.subscriber', function($provide) {
@@ -36,8 +36,9 @@
                     };
                 });
             });
-            inject(function(_$compile_, _eventSetter_, _$rootScope_) {
+            inject(function(_$q_, _$compile_, _eventSetter_, _$rootScope_) {
                 es = _eventSetter_;
+                $q = _$q_;
                 $compile = _$compile_;
                 rs = _$rootScope_;
                 parent = rs.$new();
@@ -47,7 +48,9 @@
                 getSession: function() {
                     return sessionSpy;
                 },
-                subscribe: jasmine.createSpy('subscribe'),
+                subscribe: jasmine.createSpy('subscribe').and.callFake(function(args) {
+                    return $q.when(args);
+                }),
                 unsubscribe: jasmine.createSpy('unsubscribe'),
                 isConnected: function() {
                     return true
@@ -99,18 +102,19 @@
                     describe("When scope.events is defined", function() {
                         it("should call 'eventSetter' with scope and 'subscriber'", function() {
                             parent.$broadcast('sessionReady');
+                            expect(es.calls.argsFor(0)[0]).toEqual(scope);
                             expect(es.calls.argsFor(0)[1]).toEqual('subscriber');
-                            expect(es.calls.argsFor(0)[0].subscriber).toEqual(subSpy);
                         });
                     });
                     describe("When scope.events isn't set", function() {
                         it("should not call eventSetter", function() {
+                            expect(es.calls.count()).toEqual(1);
                             elem = angular.element("<opentok-session><opentok-subscriber " +
                                 "props='targetProperties' stream='stream'></opentok-subscriber></opentok-session>");
                             elem.data({
                                 '$opentokSessionController': sessionCtrl
                             });
-                            expect(es.calls.count()).toEqual(0);
+                            expect(es.calls.count()).toEqual(1);
 
                         });
                     });

@@ -231,7 +231,7 @@
                     expect(ApiSpy.initSession).toHaveBeenCalledWith(12345, params.sessionId);
                 });
                 it("should pass token to session.connect", function() {
-                  // expect(subject).toEqual("as")
+                    // expect(subject).toEqual("as")
                     expect(spy.connect).toHaveBeenCalledWith(params.token, jasmine.any(Function));
                 });
                 // it("should call the sessionEvents service", function() {
@@ -328,17 +328,17 @@
                     queries.forEach(testQueries);
                 });
                 describe("Commands", function() {
-                    var commands = [
-                        ['forceUnpublish', [{
-                            stream: 'object'
-                        }]],
-                        ['forceDisconnect', [{
-                            connection: 'object'
-                        }]],
-                        ['signal', [{
-                            data: 'object'
-                        }]]
-                    ];
+                    var cSpy = jasmine.createSpy('cSpy'),
+                        commands = [
+                            ['forceUnpublish', [{
+                                main: cSpy
+                            }]],
+                            ['forceDisconnect', [{
+                                main: cSpy
+                            }]],
+                            ['signal', [cSpy
+                            ]]
+                        ];
 
                     function testCommands(y) {
                         describe(y[0], function() {
@@ -351,7 +351,7 @@
                             });
                             it("should pass param to OT api", function() {
                                 y[1].push(fn);
-                                expect(spy[y[0]].calls.argsFor(0)).toEqual(y[1]);
+                                expect(spy[y[0]].calls.argsFor(0)[0]).toEqual(cSpy);
                             });
                         });
                     }
