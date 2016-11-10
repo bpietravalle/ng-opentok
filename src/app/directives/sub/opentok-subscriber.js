@@ -17,11 +17,11 @@
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                $log.info(element);
 
                 ctrl.subscribe(scope.stream, element[0])
                     .then(function(res) {
                         scope.subscriber = res;
+                        scope.subscriber.element.style.height = '750px';
                     });
                 if (scope.events) {
                     eventSetter(scope, 'subscriber');

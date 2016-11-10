@@ -15,9 +15,7 @@
                 streams: '=?',
                 events: '=?'
             },
-            template: "<div class='opentok-session-container'><opentok-subscriber" +
-                " ng-repeat='stream in streams track by stream.id' stream='stream'" +
-                "></opentok-subscriber><opentok-publisher></opentok-publisher>" +
+            template: "<div class='opentok-session-container'>" +
                 "<ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
             bindToController: true,
@@ -29,6 +27,7 @@
         };
 
         function preLinkFn(scope) {
+
             scope.streams = scope.vm.getStreams();
         }
 

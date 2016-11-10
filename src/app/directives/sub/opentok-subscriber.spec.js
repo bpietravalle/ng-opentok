@@ -11,30 +11,6 @@
                         return $q.when({});
                     });
                 });
-
-                $provide.factory('otSubscriberModel', function($q) {
-                    function promiseWrap(name, obj) {
-                        if (!obj) {
-                            obj = {}
-                        }
-                        return jasmine.createSpy(name).and.callFake(function() {
-                            return $q.when(obj);
-                        });
-                    }
-                    return {
-                        init: jasmine.createSpy('init').and.callFake(function() {
-                            subSpy = {
-                                on: promiseWrap('on'),
-                                once: promiseWrap('once'),
-                                stream: {
-                                    "stream": "object"
-                                }
-                            };
-
-                            return subSpy;
-                        })
-                    };
-                });
             });
             inject(function(_$q_, _$compile_, _eventSetter_, _$rootScope_) {
                 es = _eventSetter_;
@@ -44,12 +20,32 @@
                 parent = rs.$new();
                 scope = parent.$new();
             });
+
+            function promiseWrap(name, obj) {
+                if (!obj) {
+                    obj = {}
+                }
+                return jasmine.createSpy(name).and.callFake(function() {
+                    return $q.when(obj);
+                });
+            }
+            subSpy = {
+                on: promiseWrap('on'),
+                once: promiseWrap('once'),
+                element: {
+                    style: {}
+                },
+
+                stream: {
+                    "stream": "object"
+                }
+            };
             sessionCtrl = {
                 getSession: function() {
                     return sessionSpy;
                 },
-                subscribe: jasmine.createSpy('subscribe').and.callFake(function(args) {
-                    return $q.when(args);
+                subscribe: jasmine.createSpy('subscribe').and.callFake(function() {
+                    return $q.when(subSpy);
                 }),
                 unsubscribe: jasmine.createSpy('unsubscribe'),
                 isConnected: function() {

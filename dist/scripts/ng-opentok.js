@@ -581,9 +581,7 @@
                 streams: '=?',
                 events: '=?'
             },
-            template: "<div class='opentok-session-container'><opentok-subscriber" +
-                " ng-repeat='stream in streams track by stream.id' stream='stream'" +
-                "></opentok-subscriber><opentok-publisher></opentok-publisher>" +
+            template: "<div class='opentok-session-container'>" +
                 "<ng-transclude></ng-transclude></div>",
             controller: OpenTokSessionController,
             bindToController: true,
@@ -634,24 +632,6 @@
             vm.forceUnpublish = forceUnpublish;
             vm.signal = signal;
 
-            // init();
-
-            // function init() {
-            //     return otSessionModel({
-            //             sessionId: vm.auth.sessionId,
-            //             token: vm.auth.token
-            //         })
-            //         .then(setSessionAndEvents)
-            //         .catch(standardError);
-
-            //     function setSessionAndEvents(res) {
-            //         vm.session = res;
-            //         vm.streams = vm.session.streams;
-            //         vm.publisher = vm.session.publisher;
-            //         vm.connections = vm.session.connections;
-            //     }
-
-            // }
 
             function getSession() {
                 return vm.session;
@@ -740,11 +720,11 @@
             },
             template: "<div class='opentok-subscriber'></div>",
             link: function(scope, element, a, ctrl) {
-                $log.info(element);
 
                 ctrl.subscribe(scope.stream, element[0])
                     .then(function(res) {
                         scope.subscriber = res;
+                        scope.subscriber.element.style.height = '750px';
                     });
                 if (scope.events) {
                     eventSetter(scope, 'subscriber');
@@ -777,7 +757,6 @@
     'use strict';
 
     otSubscribersDirective.$inject = ["$q", "$log"];
-    OpenTokSubscribersController.$inject = ["$log"];
     angular.module('ngOpenTok.directives.subscribers')
         .directive('opentokSubscribers', otSubscribersDirective);
 
@@ -787,7 +766,7 @@
         return {
             require: '?^^opentokSession',
             restrict: 'E',
-            // transclude: true,
+            transclude: true,
             scope: {
                 streams: '=streams',
                 events: '=?'
@@ -795,8 +774,9 @@
             template: "<div class='opentok-subscribers'><opentok-subscriber" +
                 " ng-repeat='stream in streams track by stream.id' stream='stream' events='events'>" +
                 "<ng-transclude></ng-transclude></opentok-subscriber></div>",
-            controller: OpenTokSubscribersController,
-            bindToController: true,
+            // controller: OpenTokSubscribersController,
+						// controllerAs: 'vm',
+            // bindToController: true,
             link: {
                 pre: prelink,
                 post: postlink
@@ -823,12 +803,12 @@
     }
 
     /** @ngInject */
-    function OpenTokSubscribersController($log) {
-        var vm = this;
-        $log.info('in subscribers')
-        $log.info(vm)
+    // function OpenTokSubscribersController($log) {
+    //     var vm = this;
+    //     $log.info('in subscribers')
+    //     $log.info(vm)
 
-    }
+    // }
 
 
 })();
